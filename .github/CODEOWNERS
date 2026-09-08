@@ -1,0 +1,7 @@
+# Initial central ownership for every repository path.
+* @Jvms04
+
+# Explicit governance and delivery-path ownership.
+/.github/ @Jvms04
+/docs/ @Jvms04
+/tooling/ @Jvms04

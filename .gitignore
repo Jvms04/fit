@@ -1,2 +1,62 @@
 .worktrees/
 .superpowers/
+
+# Node and generated output
+node_modules/
+dist/
+build/
+out/
+coverage/
+.nyc_output/
+*.tsbuildinfo
+
+# Logs and local test artifacts
+*.log
+logs/
+test-results/
+playwright-report/
+artifacts/
+
+# Operating system and editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment files (documented examples remain tracked)
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.example.*
+
+# Signing material
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.csr
+*.jks
+*.keystore
+
+# Local database artifacts
+*.sqlite
+*.sqlite3
+*.sqlitedb
+*.db
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-wal
+*.sqlite3-shm
+*.sqlitedb-wal
+*.sqlitedb-shm
+*.db-wal
+*.db-shm
+*.db-journal

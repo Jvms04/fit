@@ -1,0 +1,16 @@
+{
+  "name": "fit",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": "24.x"
+  },
+  "scripts": {
+    "check:repository": "node tooling/check-repository.mjs",
+    "check:boundaries": "node tooling/check-boundaries.mjs",
+    "check:schema": "node tooling/check-schema-drift.mjs",
+    "check:baseline-manifest": "node tooling/check-baseline-manifest.mjs",
+    "verify:governance": "node tooling/run-governance-checks.mjs",
+    "test": "node --test tooling/tests/*.test.mjs"
+  }
+}

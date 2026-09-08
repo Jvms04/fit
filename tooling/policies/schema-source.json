@@ -1,0 +1,9 @@
+{
+  "canonicalSourceRoot": "packages/schemas",
+  "generatedRoot": "packages/schemas/generated",
+  "generatedOutput": "JSON Schema/OpenAPI",
+  "requiredMarkers": {
+    "provenanceSource": "x-fit-provenance-source",
+    "sha256": "x-fit-sha256"
+  }
+}

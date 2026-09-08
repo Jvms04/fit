@@ -1,0 +1,46 @@
+{
+  "currentWp": "WP-001",
+  "allowedNow": ["docs", "tooling"],
+  "futureRoots": {
+    "apps/mobile": ["WP-003"],
+    "services/api": ["WP-004", "WP-009"],
+    "packages/domain": ["WP-003"],
+    "packages/application": ["WP-003"],
+    "packages/schemas": ["WP-003"],
+    "packages/observability": ["WP-003"],
+    "packages/contracts": ["WP-003", "WP-007"],
+    "packages/temporal": ["WP-011"],
+    "database/local": ["WP-005", "WP-007"],
+    "database/remote": ["WP-009"],
+    "tests": ["WP-002", "WP-003"],
+    "infra": ["WP-028"]
+  },
+  "prohibitedGenericNames": ["shared"],
+  "forbiddenImports": {
+    "domain": [
+      { "category": "React or React Native", "pattern": "^(?:react|react-native)(?:/|$)" },
+      { "category": "HTTP or server framework", "pattern": "^(?:express|fastify|hono|koa|@hapi|@nestjs|http|https)(?:/|$)" },
+      { "category": "database driver or adapter", "pattern": "^(?:pg|postgres|postgresql|sqlite|sqlite3|better-sqlite3|drizzle-orm|prisma|@prisma|mongodb|mongoose|dexie|typeorm|sequelize|knex|@supabase)(?:/|$)" },
+      { "category": "Expo or platform SDK", "pattern": "^(?:expo|@expo|react-native)(?:/|$)" },
+      { "category": "network or filesystem adapter", "pattern": "^(?:node:)?(?:fs|net|http|https|tls|dgram|child_process)(?:/|$)" },
+      { "category": "real clock provider", "pattern": "^(?:@fit/(?:real-clock|clock-real)|real-clock|clock-real)(?:/|$)" },
+      { "category": "app, service, or database infrastructure", "pattern": "^(?:apps|services|database|@fit/(?:mobile|api|infrastructure|database))(?:/|$)" }
+    ],
+    "application": [
+      { "category": "UI or framework SDK", "pattern": "^(?:react|react-native|vue|@angular|svelte)(?:/|$)" },
+      { "category": "platform SDK", "pattern": "^(?:expo|@expo)(?:/|$)" },
+      { "category": "concrete infrastructure", "pattern": "^(?:apps|services|database|infra|@fit/(?:infrastructure|mobile|api|database))(?:/|$)" },
+      { "category": "database driver or adapter", "pattern": "^(?:pg|postgres|postgresql|sqlite|sqlite3|better-sqlite3|drizzle-orm|prisma|@prisma|mongodb|mongoose|dexie|typeorm|sequelize|knex|@supabase)(?:/|$)" },
+      { "category": "local or remote database implementation", "pattern": "^(?:database/(?:local|remote)|@fit/database-(?:local|remote))(?:/|$)" }
+    ],
+    "presentation": [
+      { "category": "database, storage, or platform infrastructure", "pattern": "^(?:database|@fit/(?:database|storage|infrastructure)|(?:pg|postgres|postgresql|sqlite|sqlite3|better-sqlite3|drizzle-orm|prisma|@prisma|mongodb|mongoose|dexie|typeorm|sequelize|knex|@supabase|expo|@expo))(?:/|$)" }
+    ],
+    "database-local": [
+      { "category": "remote database root", "pattern": "^(?:database/remote|@fit/database-remote)(?:/|$)" }
+    ],
+    "database-remote": [
+      { "category": "local database root", "pattern": "^(?:database/local|@fit/database-local)(?:/|$)" }
+    ]
+  }
+}
