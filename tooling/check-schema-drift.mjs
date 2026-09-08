@@ -8,9 +8,36 @@ const SOURCE_FILE = /\.(?:js|jsx|mjs|cjs|ts|tsx)$/i;
 const SCHEMA_FILE = /\.(?:json|ya?ml)$/i;
 const NAMED_SCHEMA_ARTIFACT = /(?:^|\/)(?:schema|(?:openapi|swagger)(?:[.-][^/]*)?|[^/]+\.(?:schema|openapi|swagger))\.(?:json|ya?ml)$/i;
 const NAMED_OPENAPI_ARTIFACT = /(?:^|\/)(?:openapi|swagger)(?:[.-][^/]*)?\.(?:json|ya?ml)$/i;
-const CANONICAL_SCHEMA_MARKER = /\bz\s*\.\s*(?:object|array|union|record|discriminatedUnion|intersection)\s*\(|\bZodObject\b/;
+const CANONICAL_SCHEMA_MARKER = /\bz(?:\s*\.\s*[A-Za-z_$][\w$]*)+\s*\(|\bZod[A-Z][A-Za-z0-9_$]*\b/;
 const JSON_SCHEMA_OR_OPENAPI_MARKER = /"\$schema"\s*:|'\$schema'\s*:|"openapi"\s*:|'openapi'\s*:|^\s*openapi\s*:/im;
 const CANONICAL_SOURCE_MARKER = ['@canonical', '-schema'].join('');
+const JSON_SCHEMA_KEYWORDS = new Set([
+  '$anchor', '$comment', '$defs', '$dynamicAnchor', '$dynamicRef', '$id', '$ref', '$schema', '$vocabulary',
+  'additionalProperties', 'allOf', 'anyOf', 'const', 'contains', 'dependentRequired', 'dependentSchemas',
+  'definitions', 'else', 'enum', 'exclusiveMaximum', 'exclusiveMinimum', 'format', 'if', 'items', 'maxContains',
+  'maximum', 'maxItems', 'maxLength', 'maxProperties', 'minContains', 'minimum', 'minItems', 'minLength',
+  'minProperties', 'multipleOf', 'not', 'oneOf', 'pattern', 'patternProperties', 'prefixItems', 'properties',
+  'propertyNames', 'required', 'then', 'type', 'unevaluatedItems', 'unevaluatedProperties', 'uniqueItems'
+]);
+const JSON_SCHEMA_TYPES = new Set(['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']);
+
+function looksLikeJsonSchema(content, path) {
+  if (/\.json$/i.test(path)) {
+    try {
+      const value = JSON.parse(content);
+      if (!value || Array.isArray(value) || typeof value !== 'object') return false;
+      const keys = Object.keys(value);
+      const schemaKeys = keys.filter((key) => JSON_SCHEMA_KEYWORDS.has(key));
+      if (schemaKeys.some((key) => key !== 'type')) return true;
+      const types = Array.isArray(value.type) ? value.type : [value.type];
+      return schemaKeys.includes('type') && types.length > 0 && types.every((type) => JSON_SCHEMA_TYPES.has(type));
+    } catch {
+      return false;
+    }
+  }
+  return /(?:^|\n)\s*(?:\$ref|\$defs|definitions|properties|patternProperties|additionalProperties|items|prefixItems|required|allOf|anyOf|oneOf|not)\s*:/m.test(content)
+    || /(?:^|\n)\s*type\s*:\s*(?:array|boolean|integer|null|number|object|string)\s*(?:#.*)?$/m.test(content);
+}
 
 function maskStringsAndComments(content) {
   let masked = '';
@@ -101,6 +128,7 @@ export async function checkSchemaDrift(root = process.cwd()) {
       && (NAMED_SCHEMA_ARTIFACT.test(entry.path)
         || NAMED_OPENAPI_ARTIFACT.test(entry.path)
         || JSON_SCHEMA_OR_OPENAPI_MARKER.test(content)
+        || looksLikeJsonSchema(content, entry.path)
         || isWithin(entry.path, policy.generatedRoot));
     if (artifact && !isWithin(entry.path, policy.generatedRoot)) {
       diagnostics.push(`JSON Schema/OpenAPI artifact outside ${policy.generatedRoot}: ${entry.path}`);

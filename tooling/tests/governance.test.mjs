@@ -137,6 +137,14 @@ test('boundary import parser handles valid forms and ignores member require', as
   });
 });
 
+test('boundary import parser rejects static template-literal dynamic import', async () => {
+  await withFixture(async (root) => {
+    await write(root, 'packages/domain/template-import.mjs', 'await import(`react`);\n');
+    const result = await checkBoundaries(root);
+    assert.ok(result.diagnostics.some((message) => message.includes('forbidden domain import "react"')));
+  });
+});
+
 test('boundary import parser ignores member require separated by comments', async () => {
   await withFixture(async (root) => {
     await write(root, 'packages/domain/member-comments.mjs', "api./* member */require('react');\napi.// member\n  require('react-native');\n");
@@ -166,6 +174,14 @@ test('schema source outside canonical root fails with a specific diagnostic', as
     await write(root, 'packages/contracts/account.mjs', "const account = z.object({ id: z.string() });\n");
     const result = await checkSchemaDrift(root);
     assert.ok(result.diagnostics.some((message) => message.includes('canonical schema source outside packages/schemas: packages/contracts/account.mjs')));
+  });
+});
+
+test('scalar Zod schema source outside canonical root fails specifically', async () => {
+  await withFixture(async (root) => {
+    await write(root, 'packages/contracts/scalar.mjs', 'const id = z.string().uuid();\n');
+    const result = await checkSchemaDrift(root);
+    assert.ok(result.diagnostics.some((message) => message.includes('canonical schema source outside packages/schemas: packages/contracts/scalar.mjs')));
   });
 });
 
@@ -206,6 +222,14 @@ test('conventional schema.json without markers fails outside generated root', as
     await write(root, 'packages/contracts/schema.json', '{"type":"object"}\n');
     const result = await checkSchemaDrift(root);
     assert.ok(result.diagnostics.some((message) => message.includes('JSON Schema/OpenAPI artifact outside packages/schemas/generated: packages/contracts/schema.json')));
+  });
+});
+
+test('structural JSON Schema without naming marker fails outside generated root', async () => {
+  await withFixture(async (root) => {
+    await write(root, 'packages/contracts/account.json', '{"type":"object","properties":{"id":{"type":"string"}}}\n');
+    const result = await checkSchemaDrift(root);
+    assert.ok(result.diagnostics.some((message) => message.includes('JSON Schema/OpenAPI artifact outside packages/schemas/generated: packages/contracts/account.json')));
   });
 });
 

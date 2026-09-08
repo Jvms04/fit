@@ -86,9 +86,11 @@ function identifierAt(source, index) {
 function stringAfterTrivia(source, start) {
   const index = skipTrivia(source, start);
   const quote = source[index];
-  if (quote !== "'" && quote !== '"') return null;
+  if (quote !== "'" && quote !== '"' && quote !== '`') return null;
   const end = skipQuoted(source, index, quote);
-  return { value: source.slice(index + 1, Math.max(index + 1, end - 1)), end };
+  const value = source.slice(index + 1, Math.max(index + 1, end - 1));
+  if (quote === '`' && value.includes('${')) return null;
+  return { value, end };
 }
 
 function specifierAfterFrom(source, start) {
