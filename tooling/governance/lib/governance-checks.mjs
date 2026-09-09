@@ -6,6 +6,13 @@ const REQUIRED_AUTHORITIES = [
   "stack",
   "implementationPlan"
 ];
+const REQUIRED_BASELINE_VERSIONS = {
+  product: "1.0",
+  architecture: "1.0",
+  technicalArchitecture: "1.0",
+  stack: "1.0",
+  implementationPlan: "1.1"
+};
 
 function normalizePath(path) {
   return path.replaceAll("\\", "/").replace(/^\.\//, "");
@@ -108,8 +115,9 @@ export function validateBaselineManifest(manifest) {
     if (baseline.status !== "Approved") {
       errors.push(`${label} has non-authoritative status '${baseline.status}'`);
     }
-    if (baseline.version !== "1.0") {
-      errors.push(`${label} must have version 1.0`);
+    const requiredVersion = REQUIRED_BASELINE_VERSIONS[baseline.authority];
+    if (baseline.version !== requiredVersion) {
+      errors.push(`${label} must have version ${requiredVersion}`);
     }
     if (!SHA256_PATTERN.test(baseline.sha256 ?? "")) {
       errors.push(`${label} has an invalid sha256`);

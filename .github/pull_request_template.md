@@ -25,6 +25,17 @@
 - [ ] VAL/checkpoints registrados sem promover checkpoint a VAL canônico
 - Resultado e links de evidência:
 
+## Gate de integração — modo compensatório
+
+- Head exato a integrar:
+- Run de CI aplicável:
+- [ ] CI aplicável verde no head exato
+- [ ] Revisão humana explícita do mesmo head registrada no PR depois do CI verde
+- [ ] Integração será realizada somente por este PR
+- [ ] Nenhum push direto, force-push ou exclusão de `main`
+- [ ] Nenhum incidente operacional aberto afeta este gate
+- [ ] Ausência de enforcement remoto mantida como risco residual explícito
+
 ## Revisão adversarial
 
 - Casos aplicáveis tentados:

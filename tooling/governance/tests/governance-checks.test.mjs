@@ -70,7 +70,7 @@ const validManifest = {
       archive: "PLAN.zip",
       sha256: "3".repeat(64),
       status: "Approved",
-      version: "1.0",
+      version: "1.1",
       documents: [{ path: "PLAN.md", sha256: "4".repeat(64) }]
     }
   ]
@@ -121,8 +121,16 @@ test("requires central CODEOWNERS ownership", () => {
   assert.ok(validateCodeowners("* @fictional-team\n").length > 0);
 });
 
-test("accepts an approved five-baseline manifest in authority order", () => {
+test("accepts only the active version for each approved baseline authority", () => {
   assert.deepEqual(validateBaselineManifest(validManifest), []);
+
+  const stalePlan = structuredClone(validManifest);
+  stalePlan.baselines[4].version = "1.0";
+  assert.ok(validateBaselineManifest(stalePlan).some((error) => error.includes("1.1")));
+
+  const changedUpstream = structuredClone(validManifest);
+  changedUpstream.baselines[0].version = "1.1";
+  assert.ok(validateBaselineManifest(changedUpstream).some((error) => error.includes("1.0")));
 });
 
 test("rejects non-approved authority and malformed hashes", () => {

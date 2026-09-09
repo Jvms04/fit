@@ -2,7 +2,7 @@
 
 ## Autoridade e escopo
 
-Este repositório segue, nesta ordem, Produto → Arquitetura → Arquitetura Técnica → Stack → Plano de Implementação → artefatos operacionais da Fase 7. As cinco baselines aprovadas são somente leitura; o manifesto registra seus hashes, mas não as incorpora nem as substitui.
+Este repositório segue, nesta ordem, Produto → Arquitetura → Arquitetura Técnica → Stack → Plano de Implementação → artefatos operacionais da Fase 7. Produto, Arquitetura, Arquitetura Técnica e Stack permanecem nas versões 1.0; a Approved Implementation Plan Baseline 1.1 é a autoridade ativa da Fase 6. As cinco baselines aprovadas são somente leitura; o manifesto registra seus hashes, mas não as incorpora nem as substitui.
 
 WP-001 cria apenas governança, ownership, documentação, templates e checks estáticos. Domínio, UI, dados, migrations, backend, mobile, cloud e funcionalidade de Produto permanecem proibidos neste WP.
 
@@ -12,8 +12,11 @@ WP-001 cria apenas governança, ownership, documentação, templates e checks es
 - Branch principal: `main`.
 - Branches de execução: curtas, no formato `wp-###-slug`.
 - Cada PR deve cobrir um WP ou um recorte revisável explicitamente autorizado.
-- A proteção remota de `main` é exigida por `IPD-014` e pelo plano operacional. GitHub Free com o repositório privado não disponibiliza esse enforcement, e tornar o repositório público para obtê-lo não está autorizado; por isso, WP-001 permanece `Blocked`.
-- Até a restrição ser removida, o processo exige branch + PR, `wp001-governance` verde, revisão humana explícita e nenhuma ação intencional de push direto, force-push ou exclusão em `main`. Esses controles são compensatórios e não equivalem tecnicamente à proteção remota.
+- O modo padrão de `IPD-014` é proteção remota. Como as condições cumulativas do §7.1 do plano operacional estão evidenciadas, o modo compensatório está ativo para o contexto atual.
+- Toda mudança planejada nasce em branch curta por WP e é integrada somente pelo PR correspondente como processo autorizado.
+- O CI aplicável deve estar verde no head exato antes do merge. Depois disso, o owner registra no PR revisão humana explícita do mesmo diff, checks e evidências.
+- Push direto, force-push e exclusão de `main` são processualmente proibidos; qualquer tentativa ou ocorrência é incidente operacional e bloqueia o gate afetado até tratamento registrado.
+- A ausência de enforcement remoto permanece risco residual explícito. O modo compensatório não é branch protection/ruleset nem equivalente técnico.
 
 ## Nascimento de áreas
 
