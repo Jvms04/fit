@@ -7,7 +7,10 @@
   },
   "scripts": {
     "check:governance": "node tooling/governance/check-repository.mjs",
+    "check:wp002-state": "node tests/performance/wp-002/verify-state.mjs",
     "test:governance": "node --test tooling/governance/tests/*.test.mjs",
-    "verify:wp001": "npm run test:governance && npm run check:governance"
+    "test:wp002": "node --test tests/unit/wp-002/*.test.mjs",
+    "verify:wp001": "npm run test:governance && npm run check:governance",
+    "verify:wp002": "npm run test:governance && npm run test:wp002 && npm run check:governance && npm run check:wp002-state"
   }
 }

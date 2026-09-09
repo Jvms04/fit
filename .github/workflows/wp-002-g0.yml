@@ -1,0 +1,80 @@
+name: WP-002 G0 harness
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/wp-002-g0.yml"
+      - "docs/evidence/**"
+      - "tests/**"
+      - "tooling/governance/**"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  wp002-g0:
+    name: wp002-g0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/native/wp-002-mobile-harness/package-lock.json
+      - name: Install locked governance metadata
+        run: npm ci --ignore-scripts
+      - name: Verify WP-002 state and guardrails
+        run: npm run verify:wp002
+      - name: Install locked disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm ci --ignore-scripts
+      - name: Typecheck disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run typecheck
+      - name: Resolve public Expo configuration
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run config:public
+
+  android-probe-build:
+    name: android-probe-build
+    needs: wp002-g0
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tests/native/wp-002-mobile-harness/package-lock.json
+      - name: Install locked disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm ci --ignore-scripts
+      - name: Generate disposable Android project
+        working-directory: tests/native/wp-002-mobile-harness
+        run: EXPO_OFFLINE=1 ./node_modules/.bin/expo prebuild --platform android --clean --no-install
+      - name: Report Android build environment
+        working-directory: tests/native/wp-002-mobile-harness/android
+        run: |
+          java -version
+          ./gradlew --version
+      - name: Build arm64 release probe
+        working-directory: tests/native/wp-002-mobile-harness/android
+        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+      - name: Upload disposable probe APK
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wp-002-android-probe
+          path: tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 3

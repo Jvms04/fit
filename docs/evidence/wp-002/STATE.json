@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "wp": "WP-002",
+  "increment": "G0 / INC-P0-01",
+  "status": "In Progress",
+  "val025": "NOT-EXECUTED",
+  "protocols": [
+    { "id": "SP-007", "status": "IN-PROGRESS" },
+    { "id": "VAL-001", "status": "NOT-EXECUTED" },
+    { "id": "VAL-003", "status": "NOT-EXECUTED" },
+    { "id": "VAL-004", "status": "NOT-EXECUTED" },
+    { "id": "VAL-006", "status": "NOT-EXECUTED" },
+    { "id": "VAL-011", "status": "BLOCKED" },
+    { "id": "VAL-016@P0", "status": "INCONCLUSIVE" }
+  ],
+  "platforms": {
+    "androidPhysical": {
+      "device": "Samsung Galaxy S23",
+      "os": "Android 16",
+      "availabilitySource": "human-confirmed",
+      "executorConnection": "ABSENT",
+      "status": "NOT-EXECUTED"
+    },
+    "iosPhysical": {
+      "status": "BLOCKED",
+      "reason": "No iPhone/macOS/Xcode/provisioning available"
+    }
+  },
+  "externalResources": {
+    "supabase": "NOT-PROVISIONED-BY-WP-002",
+    "gcp": "NOT-PROVISIONED-BY-WP-002"
+  }
+}

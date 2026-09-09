@@ -48,12 +48,12 @@ const errors = [
 ];
 
 if (errors.length > 0) {
-  console.error("WP-001 governance check failed:");
+  console.error(`${policy.activeWp} governance check failed:`);
   for (const error of errors) {
     console.error(`- ${error}`);
   }
   process.exitCode = 1;
 } else {
-  console.log(`WP-001 governance check passed (${files.length} tracked-surface files inspected).`);
+  console.log(`${policy.activeWp} governance check passed (${files.length} tracked-surface files inspected).`);
   console.log("No VAL result was produced by this check.");
 }

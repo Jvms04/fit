@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "activeGate": "G0",
-  "activeWp": "WP-001",
+  "activeWp": "WP-002",
   "allowedTopLevel": [
     ".editorconfig",
     ".github",
@@ -11,6 +11,7 @@
     "docs",
     "package-lock.json",
     "package.json",
+    "tests",
     "tooling"
   ],
   "requiredFiles": [
@@ -19,6 +20,8 @@
     ".github/workflows/governance.yml",
     "docs/baselines/BASELINE_MANIFEST.json",
     "docs/evidence/INDEX.md",
+    "docs/evidence/WP-002.md",
+    "docs/evidence/wp-002/PROTOCOL_MATRIX.md",
     "docs/governance/REPOSITORY_GOVERNANCE.md",
     "tooling/governance/check-repository.mjs"
   ],
