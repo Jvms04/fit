@@ -1,2 +1,13 @@
 .worktrees/
 .superpowers/
+node_modules/
+coverage/
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore

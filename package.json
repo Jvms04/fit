@@ -1,0 +1,13 @@
+{
+  "name": "fit",
+  "version": "0.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "check:governance": "node tooling/governance/check-repository.mjs",
+    "test:governance": "node --test tooling/governance/tests/*.test.mjs",
+    "verify:wp001": "npm run test:governance && npm run check:governance"
+  }
+}

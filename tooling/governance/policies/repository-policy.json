@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "activeGate": "G0",
+  "activeWp": "WP-001",
+  "allowedTopLevel": [
+    ".editorconfig",
+    ".github",
+    ".gitignore",
+    ".nvmrc",
+    "README.md",
+    "docs",
+    "package-lock.json",
+    "package.json",
+    "tooling"
+  ],
+  "requiredFiles": [
+    ".github/CODEOWNERS",
+    ".github/pull_request_template.md",
+    ".github/workflows/governance.yml",
+    "docs/baselines/BASELINE_MANIFEST.json",
+    "docs/evidence/INDEX.md",
+    "docs/governance/REPOSITORY_GOVERNANCE.md",
+    "tooling/governance/check-repository.mjs"
+  ],
+  "forbiddenPathSegments": ["shared"],
+  "reservedTopLevelBirths": {
+    "apps": "WP-003",
+    "services": "WP-004/WP-009",
+    "packages": "WP-003 (temporal in WP-011)",
+    "database": "WP-005/WP-007/WP-009",
+    "tests": "WP-002/WP-003",
+    "infra": "WP-028"
+  },
+  "schemaDriftPreparation": {
+    "status": "PREPARATION-ONLY",
+    "canonicalSchemaRoot": "packages/schemas",
+    "schemaRootBirth": "WP-003",
+    "rule": "Schema consumers must use generated or checked contracts; parallel handwritten contracts are prohibited."
+  },
+  "val025Preparation": {
+    "status": "NOT-EXECUTED",
+    "result": null,
+    "controlsPrepared": [
+      "immutable baseline hashes",
+      "central ownership",
+      "minimal workflow permissions",
+      "commit-pinned workflow actions",
+      "dependency lockfile",
+      "sensitive-path rejection"
+    ]
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "generatedFor": "WP-001",
+  "generatedAt": "2026-09-09",
+  "hashAlgorithm": "SHA-256",
+  "documentCount": 41,
+  "authorityOrder": [
+    "product",
+    "architecture",
+    "technicalArchitecture",
+    "stack",
+    "implementationPlan"
+  ],
+  "authorityRule": "Phase 7 operational artifacts may not modify or supersede these baselines.",
+  "excludedAuthorityLabels": ["Candidate", "Patched", "Draft"],
+  "baselines": [
+    {
+      "authority": "product",
+      "archive": "FIT_PRODUCT_BASELINE_1.0.zip",
+      "sha256": "00bb67ad06339524c4f0aac3c5fc0f3fb2bc445da8e6945b3b9fdf8633fbe7e2",
+      "status": "Approved",
+      "version": "1.0",
+      "date": "2026-09-03",
+      "documentCount": 5,
+      "expectedCounts": {
+        "requirements": 106,
+        "P0": 56,
+        "P1": 36,
+        "P2": 12,
+        "P3": 2,
+        "flows": 23,
+        "acceptanceGroups": 14,
+        "PD": 30
+      },
+      "documents": [
+        {"path": "MVP_SCOPE.md", "sha256": "5b05ae25e473c324ac1c28eda6840efeb5dd53f89a6be1f118c90b41c2fd0d08"},
+        {"path": "PRD.md", "sha256": "4c7105bad1a9e9dbd84e32b34770aa37e0dce0a4691ca13aabaac9a9b16556a5"},
+        {"path": "PRODUCT_DECISIONS.md", "sha256": "ec7178b2a54264d072f44cd0fd8b7f2ee97dc7ea3d18e5134efa030250716c3e"},
+        {"path": "PRODUCT_VISION.md", "sha256": "01c07e033b29c2550c00e35af4362fe206113c313ef3ba679901d0a32d3c1365"},
+        {"path": "USER_FLOWS.md", "sha256": "1aad2aeb443295dde043bc25512c5b4d4cab6f37f97ed38f8c5243f71f797b4f"}
+      ]
+    },
+    {
+      "authority": "architecture",
+      "archive": "FIT_ARCHITECTURE_BASELINE_1.0.zip",
+      "sha256": "90b3eee328e55b318c0f8c3ae240981a48cf2bc9684cf15bc7147f415839181c",
+      "status": "Approved",
+      "version": "1.0",
+      "date": "2026-09-04",
+      "documentCount": 6,
+      "expectedCounts": {"AD-C": 10, "UX-S": 8, "INV": 32, "FC": 10, "AD-BL": 38, "SP": 7},
+      "documents": [
+        {"path": "ARCHITECTURE_DECISION_BACKLOG.md", "sha256": "331c00a97411ecc54c581ed6b8c619732b93d96b08132553826a35fcef63d479"},
+        {"path": "ARCHITECTURE_INVARIANTS.md", "sha256": "44761a27e96e876e63f42582765e16c3b98b17170185554858748c80206667d0"},
+        {"path": "ARCHITECTURE_OVERVIEW.md", "sha256": "9defd33177f6f3205e7ceb8158e2e8d4deea12e90253c89d5ffac867aeaaf2f2"},
+        {"path": "DOMAIN_ARCHITECTURE.md", "sha256": "576f6a0f7f575617bdfd39f04b17b7c1afb809d066dbc14739d1a32ef0237c39"},
+        {"path": "FUNCTIONAL_ARCHITECTURE.md", "sha256": "78590cb5a47195243e5af832de1a8bbf33700675371c67f26a5d2b3833d6a037"},
+        {"path": "STRUCTURAL_UX.md", "sha256": "734a11b2383ae08f9c400be33da3323f6668ce753c8b0bb2b81f3392822bced5"}
+      ]
+    },
+    {
+      "authority": "technicalArchitecture",
+      "archive": "FIT_PHASE4_ARCHITECTURE_BASELINE_1.0.zip",
+      "sha256": "4d3e1fe6ccbcc25c84d38bee548be1e32f797a31b771f66826b12402f2f5bb3b",
+      "status": "Approved",
+      "version": "1.0",
+      "date": "2026-09-04",
+      "documentCount": 10,
+      "expectedCounts": {"AD-BL": 38, "SP": 7, "INV": 32, "FC": 10, "AD-C": 10, "UX-S": 8, "PD": 30, "flows": 23, "acceptanceGroups": 14},
+      "documents": [
+        {"path": "APPLICATION_ARCHITECTURE.md", "sha256": "e8f8395adaa5f2f180abd7f500709ffa7c502f50cd02f858d22f19c8477857ec"},
+        {"path": "DATA_ARCHITECTURE.md", "sha256": "fc2bdf1020522bb503f1c491d750ae26b21fabef00793a9d00f176fdc789ce4a"},
+        {"path": "INTEGRATION_AND_FILE_ARCHITECTURE.md", "sha256": "0331afb732400e383f2588c1cad5a4d89fa83af8590af2561f4a154422256872"},
+        {"path": "OFFLINE_SYNC_ARCHITECTURE.md", "sha256": "068336a2815bff8547b6b59a10ab8361c00fa84567a07b0d5e44b8ee25e7e56f"},
+        {"path": "PHASE4_DECISION_REGISTER.md", "sha256": "f918eeb7584fd5ff754429518f1be3c4c91c06217c7c21b0511a91423e00257a"},
+        {"path": "SECURITY_ARCHITECTURE.md", "sha256": "9775e8086a412cd99e6f9a573288ed912be06cc7e3a4d69feffa063bc6903ba6"},
+        {"path": "STACK_SELECTION_CRITERIA.md", "sha256": "6760f4aba9ef4c5d058b90d71a5848f47610b3138acee72ad8abddf58791c97d"},
+        {"path": "TECHNICAL_ARCHITECTURE_OVERVIEW.md", "sha256": "499b3a8f8e81eec23e051e02c8c89435353c7da15057b7bb6de3c68991484a39"},
+        {"path": "TECHNICAL_QUALITY_STRATEGY.md", "sha256": "f0905f930bae32b7c2ba991e94896699d448c3335e5e2692ddeb258f09ab2c50"},
+        {"path": "TEMPORAL_ARCHITECTURE.md", "sha256": "c1048fce63f8539d2884d44a1681d43cf6ff550a34a25a591b34225b95ab5b2a"}
+      ]
+    },
+    {
+      "authority": "stack",
+      "archive": "FIT_PHASE5_STACK_BASELINE_1.0.zip",
+      "sha256": "8f84f4946235abbb9e8ca4d1fdea1c13c6b81913ffda389c93edc478cd87006a",
+      "status": "Approved",
+      "version": "1.0",
+      "date": "2026-09-04",
+      "documentCount": 10,
+      "expectedCounts": {"AD-BL": 38, "VAL": 25, "SP": 7, "Selected": 22, "SelectedWithValidationGate": 12, "BlockedByExternalEvidence": 2, "DeferredByHorizon": 2},
+      "documents": [
+        {"path": "BACKEND_REMOTE_DATA_AUTH_EVALUATION.md", "sha256": "47e05b0855d957cb511a5eef2e8679f9ec7f111bbb2add0c2e050b7931526a57"},
+        {"path": "LOCAL_DATA_STACK_EVALUATION.md", "sha256": "540705fb3a06391530b1b6ec0f02be938002963b86a4fa5336556e94b1c134e5"},
+        {"path": "MOBILE_STACK_EVALUATION.md", "sha256": "e8e71323432343469be145344210b8f158d91e815d5aae59688b0929ae4019bf"},
+        {"path": "PHASE5_DECISION_REGISTER.md", "sha256": "905d3bf9e2753378182fb1ad66e00729d8338d2c56e224ce1d35e94e859da7db"},
+        {"path": "PHASE5_VALIDATION_REGISTER.md", "sha256": "651947208829ecd1aaca32b05fdc94cab45b1839a2330faa678bbd2500d78dfa"},
+        {"path": "PLATFORM_SECURITY_INTEGRATIONS_EVALUATION.md", "sha256": "6d8255d9c47841caf29bbd3774534d5400cc9f71351c4c696c4917a1e13373be"},
+        {"path": "QUALITY_TOOLCHAIN_EVALUATION.md", "sha256": "47289f08055871ec08e0fe4f7759feaa203de934c03d7a3903519ece745c444e"},
+        {"path": "SELECTED_STACK.md", "sha256": "668eb4303f8da3481122ff90e8ac369e6d5d42c18ac4ead3ee6005ff83fae677"},
+        {"path": "STACK_SELECTION_OVERVIEW.md", "sha256": "2e07f2c63778b1c6803135c803cd77c3e5156e31a10bb340481ab938ec9941fa"},
+        {"path": "SYNC_AND_CONFLICT_STACK_EVALUATION.md", "sha256": "0c7951c6113acd57a3088e8c4e9b12d1c0a2c7bf3a12d698edb13aa353a3312a"}
+      ]
+    },
+    {
+      "authority": "implementationPlan",
+      "archive": "FIT_PHASE6_IMPLEMENTATION_PLAN_BASELINE_1.1.zip",
+      "sha256": "24bd9cb3a88dd05c2469ecd93f958145a29563f3f8093cf96aba451fb93531e2",
+      "status": "Approved",
+      "version": "1.1",
+      "date": "2026-09-09",
+      "documentCount": 10,
+      "expectedCounts": {"requirements": 106, "P0": 56, "P1": 36, "P2": 12, "P3": 2, "flows": 23, "acceptanceGroups": 14, "AD-BL": 38, "VAL": 25, "SP": 7, "increments": 16, "WP": 44, "IPD": 24},
+      "documents": [
+        {"path": "DATA_AND_MIGRATION_IMPLEMENTATION_PLAN.md", "sha256": "2be7f4ca06ebdee8f0523502f34f87bc7a25847fc0f5ca064f3fbb55cf82657e"},
+        {"path": "DEPENDENCY_RISK_AND_CRITICAL_PATH.md", "sha256": "0c1e1463e26d33e34a9663d614d63d5b3ca569cabc83fa3d403553ec8fbf9db6"},
+        {"path": "ENVIRONMENT_DELIVERY_AND_OPERATIONS_PLAN.md", "sha256": "2a15c31a7d0f30a3da349f1010ed7d37e4393adbfcd75a31213d023d7ee33620"},
+        {"path": "IMPLEMENTATION_PLAN_OVERVIEW.md", "sha256": "5d431704d9f221926b146ceda7c29cacd4a3b918bd3e1a69d6eea972773d09f9"},
+        {"path": "IMPLEMENTATION_ROADMAP.md", "sha256": "46c7bf1298270efc46da68ed20abf0658ca4225b0d10e9f2a5c11ea9c1027547"},
+        {"path": "IMPLEMENTATION_WORK_BREAKDOWN.md", "sha256": "4813b5c9531303520d2e1ef4d646be521d1be2df5c964b847a0edc11aca2dbd1"},
+        {"path": "PHASE6_DECISION_REGISTER.md", "sha256": "64bd309beb38df80314646a51c52b4131d2764a61e69f5e416053a1d511da510"},
+        {"path": "PHASE7_EXECUTION_BRIEF.md", "sha256": "b24badc0cff7ef6c689f07b6aa56a0f09941aea9d89061f693f204b497bd1215"},
+        {"path": "QUALITY_AND_TEST_EXECUTION_PLAN.md", "sha256": "39dbd8acfcb8107f773fb7daed580e193f1fd35c8cd8d44726a3759146ed40ae"},
+        {"path": "VALIDATION_AND_SPIKE_EXECUTION_PLAN.md", "sha256": "21edadd73e46c6dcb763fa77302cdae6879029a79ac4e430de94dfec740b028b"}
+      ]
+    }
+  ]
+}
