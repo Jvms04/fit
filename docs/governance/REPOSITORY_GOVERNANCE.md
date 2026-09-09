@@ -12,7 +12,8 @@ WP-001 cria apenas governança, ownership, documentação, templates e checks es
 - Branch principal: `main`.
 - Branches de execução: curtas, no formato `wp-###-slug`.
 - Cada PR deve cobrir um WP ou um recorte revisável explicitamente autorizado.
-- A proteção de `main` deve exigir PR, aprovação humana e o check `wp001-governance`. A configuração remota permanece pendente até o owner aplicá-la; um documento operacional não equivale a proteção ativa.
+- A proteção remota de `main` é exigida por `IPD-014` e pelo plano operacional. GitHub Free com o repositório privado não disponibiliza esse enforcement, e tornar o repositório público para obtê-lo não está autorizado; por isso, WP-001 permanece `Blocked`.
+- Até a restrição ser removida, o processo exige branch + PR, `wp001-governance` verde, revisão humana explícita e nenhuma ação intencional de push direto, force-push ou exclusão em `main`. Esses controles são compensatórios e não equivalem tecnicamente à proteção remota.
 
 ## Nascimento de áreas
 
