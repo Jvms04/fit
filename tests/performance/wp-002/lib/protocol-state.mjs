@@ -47,5 +47,12 @@ export function validateWp002State(state) {
     errors.push("physical iOS evidence must remain explicitly BLOCKED with a reason");
   }
 
+  const diagnosticAttempts = state?.platforms?.androidPhysical?.diagnosticAttempts ?? [];
+  if (diagnosticAttempts.some((attempt) =>
+    attempt.classification === "ABORTED-DIAGNOSTIC" && attempt.characterizationEvidence !== false
+  )) {
+    errors.push("an aborted diagnostic attempt cannot be promoted as characterization evidence");
+  }
+
   return errors;
 }

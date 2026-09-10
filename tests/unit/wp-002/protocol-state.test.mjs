@@ -42,3 +42,17 @@ test("requires the physical iOS gap to stay explicit", () => {
 
   assert.ok(validateWp002State(state).some((error) => error.includes("iOS")));
 });
+
+test("rejects an aborted diagnostic attempt promoted as characterization evidence", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.diagnosticAttempts = [{
+    id: "SP007-S23-ATTEMPT-001",
+    classification: "ABORTED-DIAGNOSTIC",
+    characterizationEvidence: true,
+    resultFile: "INVALID-ZERO-BYTES"
+  }];
+
+  assert.ok(
+    validateWp002State(state).some((error) => error.includes("aborted diagnostic"))
+  );
+});

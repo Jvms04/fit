@@ -22,3 +22,35 @@ export function summarizeDurations(samples) {
     maxMs: sorted.at(-1)
   };
 }
+
+function classifyLaunchAttempt(launch, expectedLaunchState) {
+  if (launch.launchState === "UNKNOWN (0)") {
+    return "NOT_A_LAUNCH_EVENT";
+  }
+  if (launch.launchState !== expectedLaunchState) {
+    return "UNEXPECTED_LAUNCH_STATE";
+  }
+  if (!Number.isFinite(launch.totalTimeMs) || launch.totalTimeMs < 0) {
+    return "MISSING_OR_INVALID_TOTAL_TIME";
+  }
+  return "MEASURED";
+}
+
+export function evaluateLaunchAttempts(attempts, expectedLaunchState) {
+  const records = attempts.map((attempt) => ({
+    ...attempt,
+    protocolClassification: classifyLaunchAttempt(attempt.launch, expectedLaunchState)
+  }));
+  const measuredDurations = records
+    .filter((record) => record.protocolClassification === "MEASURED")
+    .map((record) => record.launch.totalTimeMs);
+
+  return {
+    expectedLaunchState,
+    requestedCount: records.length,
+    measuredCount: measuredDurations.length,
+    excludedCount: records.length - measuredDurations.length,
+    totalTime: measuredDurations.length > 0 ? summarizeDurations(measuredDurations) : null,
+    records
+  };
+}

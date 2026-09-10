@@ -5,6 +5,14 @@
   "formalValidation": false,
   "budgetApplied": false,
   "sampleCountPerLaunchMode": 5,
+  "launchProtocol": {
+    "coldExpectedState": "COLD",
+    "warmPreparation": "KEYCODE_BACK",
+    "warmExpectedState": "WARM",
+    "requiredTimingField": "TotalTime",
+    "waitTimeMaySubstituteTotalTime": false,
+    "ineligibleAttemptDisposition": "ABORTED_DIAGNOSTIC"
+  },
   "syntheticData": {
     "rowCount": 1000,
     "classification": "exploratory",

@@ -7,3 +7,5 @@ The screen and data are synthetic. The harness enables SQLCipher through Expo pr
 `Expo Go` is not valid evidence. Use a release prebuild on an explicitly selected physical device. The generated `android/` and `ios/` trees are disposable build outputs and remain ignored.
 
 No numeric result is a budget until a human approves and preregisters that budget. The initial runner deliberately rejects the 30-run sample count reserved for the formal `VAL-001` protocol.
+
+For the initial cold/warm characterization, the host runner uses `KEYCODE_BACK` before a requested warm relaunch and trusts the Android-reported launch state. Only `COLD`/`WARM` samples with `TotalTime` are eligible. `UNKNOWN (0)`, a different launch state, or missing `TotalTime` makes the attempt diagnostic-only; `WaitTime` remains raw and is never substituted.

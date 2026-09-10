@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { summarizeDurations } from "../../performance/wp-002/lib/metrics.mjs";
+import { parseAmStartOutput } from "../../performance/wp-002/lib/android-output.mjs";
+import * as metrics from "../../performance/wp-002/lib/metrics.mjs";
+
+const { summarizeDurations } = metrics;
 
 test("summarizes unsorted raw samples with nearest-rank p95", () => {
   const raw = [40, 10, 50, 20, 30];
@@ -20,4 +23,44 @@ test("rejects empty, negative, and non-finite samples", () => {
   for (const raw of [[], [1, -1], [1, Number.NaN], [1, Number.POSITIVE_INFINITY]]) {
     assert.throws(() => summarizeDurations(raw), /finite non-negative/);
   }
+});
+
+test("classifies UNKNOWN (0) without TotalTime as diagnostic-only and never uses WaitTime", () => {
+  assert.equal(
+    typeof metrics.evaluateLaunchAttempts,
+    "function",
+    "the runner needs an explicit launch-attempt classifier"
+  );
+
+  const waitTimes = [23, 19, 19, 27, 18];
+  const attempts = waitTimes.map((waitTimeMs, index) => ({
+    sample: index + 1,
+    launch: parseAmStartOutput([
+      "Status: ok",
+      "LaunchState: UNKNOWN (0)",
+      "Activity: com.fit.wp002probe/.MainActivity",
+      `WaitTime: ${waitTimeMs}`,
+      "Complete"
+    ].join("\n"))
+  }));
+
+  const result = metrics.evaluateLaunchAttempts(attempts, "WARM");
+
+  assert.equal(result.expectedLaunchState, "WARM");
+  assert.equal(result.requestedCount, 5);
+  assert.equal(result.measuredCount, 0);
+  assert.equal(result.excludedCount, 5);
+  assert.equal(result.totalTime, null);
+  assert.deepEqual(
+    result.records.map(({ protocolClassification, launch }) => ({
+      protocolClassification,
+      totalTimeMs: launch.totalTimeMs,
+      waitTimeMs: launch.waitTimeMs
+    })),
+    waitTimes.map((waitTimeMs) => ({
+      protocolClassification: "NOT_A_LAUNCH_EVENT",
+      totalTimeMs: null,
+      waitTimeMs
+    }))
+  );
 });

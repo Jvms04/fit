@@ -17,9 +17,18 @@
     "androidPhysical": {
       "device": "Samsung Galaxy S23",
       "os": "Android 16",
-      "availabilitySource": "human-confirmed",
+      "availabilitySource": "human-executed",
       "executorConnection": "ABSENT",
-      "status": "NOT-EXECUTED"
+      "status": "NOT-EXECUTED",
+      "diagnosticAttempts": [
+        {
+          "id": "SP007-S23-ATTEMPT-001",
+          "classification": "ABORTED-DIAGNOSTIC",
+          "characterizationEvidence": false,
+          "resultFile": "INVALID-ZERO-BYTES",
+          "harnessHead": "2678cd63c25a96f15a24927dfdecb31a82b09651"
+        }
+      ]
     },
     "iosPhysical": {
       "status": "BLOCKED",

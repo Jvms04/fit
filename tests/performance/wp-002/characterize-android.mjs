@@ -5,7 +5,7 @@ import { execFileSync } from "node:child_process";
 import process from "node:process";
 
 import { parseAmStartOutput, parseDeviceList, parseTotalPssKb } from "./lib/android-output.mjs";
-import { summarizeDurations } from "./lib/metrics.mjs";
+import { evaluateLaunchAttempts } from "./lib/metrics.mjs";
 
 function readArguments(argv) {
   const values = new Map();
@@ -69,22 +69,34 @@ for (let index = 0; index < samples; index += 1) {
     totalPssKb: parseTotalPssKb(memoryOutput)
   });
 
-  runAdb(["shell", "input", "keyevent", "KEYCODE_HOME"]);
+  runAdb(["shell", "input", "keyevent", "KEYCODE_BACK"]);
   const warmLaunch = parseAmStartOutput(runAdb(["shell", "am", "start", "-W", "-n", activity]));
   warm.push({ sample: index + 1, launch: warmLaunch });
 }
 
-const totalTimes = (records) => records.map((record) => record.launch.totalTimeMs);
+const coldEvaluation = evaluateLaunchAttempts(cold, "COLD");
+const warmEvaluation = evaluateLaunchAttempts(warm, "WARM");
+const eligibleForSp007Characterization =
+  coldEvaluation.measuredCount === samples && warmEvaluation.measuredCount === samples;
 const serialRef = createHash("sha256").update(serial).digest("hex").slice(0, 12);
 
 const report = {
   schemaVersion: 1,
   protocol: "SP-007",
   stage: "INITIAL-CHARACTERIZATION",
-  disposition: "PARTIAL",
+  attemptClassification: eligibleForSp007Characterization
+    ? "INITIAL_CHARACTERIZATION_CANDIDATE"
+    : "ABORTED_DIAGNOSTIC",
+  disposition: eligibleForSp007Characterization ? "PARTIAL" : "DIAGNOSTIC-ONLY",
   generatedAt: new Date().toISOString(),
   budgetApplied: false,
   formalValidation: false,
+  protocolValidity: {
+    eligibleForSp007Characterization,
+    expectedLaunchStates: ["COLD", "WARM"],
+    warmPreparation: "KEYCODE_BACK",
+    totalTimePolicy: "TotalTime is required; WaitTime is retained raw and never substituted"
+  },
   environment: {
     serialRef: `sha256:${serialRef}`,
     manufacturer: getProp("ro.product.manufacturer"),
@@ -99,23 +111,29 @@ const report = {
   },
   subject: { packageName, activity, samples },
   raw: {
-    cold,
-    warm,
+    cold: coldEvaluation.records,
+    warm: warmEvaluation.records,
     probeLog: runAdb(["logcat", "-d", "-v", "epoch", "ReactNativeJS:I", "*:S"])
       .split(/\r?\n/)
       .filter((line) => line.includes("[FIT_WP002]"))
   },
   summaries: {
-    coldTotalTime: summarizeDurations(totalTimes(cold)),
-    warmTotalTime: summarizeDurations(totalTimes(warm))
+    coldTotalTime: coldEvaluation.totalTime,
+    warmTotalTime: warmEvaluation.totalTime
   },
   limitations: [
     "single Android physical device row",
     "initial sample only; not the 30-run VAL-001 protocol",
     "no approved budget applied",
     "no iOS physical evidence",
-    "does not establish minimum, intermediate, or current support matrix"
+    "does not establish minimum, intermediate, or current support matrix",
+    ...(eligibleForSp007Characterization
+      ? []
+      : ["one or more requested launch samples were ineligible; this output is diagnostic only"])
   ]
 };
 
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+if (!eligibleForSp007Characterization) {
+  process.exitCode = 2;
+}

@@ -4,7 +4,7 @@ This matrix is operational evidence. It does not change a baseline and does not 
 
 | Protocol | Direct scope in WP-002 | Executable now | Physical Android | Physical iOS | Current state |
 |---|---|---|---|---|---|
-| SP-007 | initial device matrix and empirical characterization | host/harness preparation | Galaxy S23 / Android 16 after an ADB channel exists | required for final matrix; unavailable | IN-PROGRESS |
+| SP-007 | initial device matrix and empirical characterization | host/harness correction after aborted diagnostic attempt | Galaxy S23 / Android 16; corrected cold/warm rerun pending on human-side ADB | required for final matrix; unavailable | IN-PROGRESS |
 | VAL-001 | Expo 57 / RN 0.86.3 structural gate | harness/typecheck/CI only | formal run waits for approved budgets | required; unavailable | NOT-EXECUTED |
 | VAL-003 | SQLCipher files/key/rekey/crash/performance | harness preparation only | formal run waits for approved budgets and device | required; unavailable | NOT-EXECUTED |
 | VAL-004 | Keystore/SecureStore A/B, lock, backup, CSPRNG | static preparation only | formal device lifecycle not started | required; unavailable | NOT-EXECUTED |
