@@ -19,7 +19,7 @@
       "os": "Android 16",
       "availabilitySource": "human-executed",
       "executorConnection": "ABSENT",
-      "status": "NOT-EXECUTED",
+      "status": "PARTIAL",
       "diagnosticAttempts": [
         {
           "id": "SP007-S23-ATTEMPT-001",
@@ -28,7 +28,27 @@
           "resultFile": "INVALID-ZERO-BYTES",
           "harnessHead": "2678cd63c25a96f15a24927dfdecb31a82b09651"
         }
-      ]
+      ],
+      "characterizationAttempts": [
+        {
+          "id": "SP007-S23-ATTEMPT-002",
+          "classification": "INITIAL_CHARACTERIZATION_CANDIDATE",
+          "disposition": "PARTIAL",
+          "characterizationEvidence": true,
+          "rawArtifact": "raw/SP007_S23_ATTEMPT_002_RAW_UTF16LE.json",
+          "canonicalArtifact": "raw/SP007_S23_ATTEMPT_002_CANONICAL_UTF8.json",
+          "provenance": "raw/SP007_S23_ATTEMPT_002_PROVENANCE.json",
+          "harnessHead": "52ba378e434e2d13fe1f07564ce730850391a708",
+          "budgetApplied": false,
+          "formalValidation": false
+        }
+      ],
+      "budgets": {
+        "status": "APPROVED-PREREGISTERED",
+        "record": "SP007_S23_BUDGETS.json",
+        "retrospectiveApplication": false,
+        "formalRunStarted": false
+      }
     },
     "iosPhysical": {
       "status": "BLOCKED",

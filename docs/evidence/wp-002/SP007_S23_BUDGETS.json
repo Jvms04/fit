@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "protocol": "SP-007 / VAL-001 Samsung Galaxy S23 line",
+  "status": "APPROVED-PREREGISTERED",
+  "approvedOn": "2026-09-10",
+  "effectiveTiming": "only for formal executions started after the first repository commit containing this record",
+  "retrospectiveApplication": false,
+  "scope": {
+    "device": "Samsung Galaxy S23 (SM-S911B)",
+    "os": "Android 16 / API 36",
+    "buildType": "release harness",
+    "dataset": "synthetic deterministic dataset with 1000 rows",
+    "alphaWide": false,
+    "definesAndroidMinimumOrIntermediate": false,
+    "coversIos": false
+  },
+  "sampleValidity": {
+    "cold": {
+      "required": 30,
+      "launchState": "COLD",
+      "protocolClassification": "MEASURED",
+      "metricRequired": "TotalTime"
+    },
+    "warm": {
+      "required": 30,
+      "launchState": "WARM",
+      "protocolClassification": "MEASURED",
+      "metricRequired": "TotalTime"
+    },
+    "waitTimeSubstitutionAllowed": false,
+    "readyMsSubstitutionAllowed": false,
+    "allowedCrashes": 0
+  },
+  "budgets": {
+    "coldStartupTotalTimeP95Ms": 600,
+    "warmStartupTotalTimeP95Ms": 200,
+    "coldTotalPssP95Kb": 133120
+  },
+  "statisticalMethod": {
+    "p95": "nearest-rank",
+    "rankFor30Samples": 29,
+    "requiredReportedStatistics": [
+      "minimum",
+      "median",
+      "p95",
+      "maximum"
+    ]
+  },
+  "derivation": {
+    "classification": "provisional operational guardband for this device line; not a robust statistical estimate from n=5",
+    "coldStartup": "observed max 365 ms plus the observed range 191 ms equals 556 ms; rounded up to 600 ms",
+    "warmStartup": "observed max 125 ms plus the observed range 40 ms equals 165 ms; rounded up to 200 ms",
+    "coldTotalPss": "observed max 118305 KB plus the observed range 14278 KB equals 132583 KB; rounded up to 133120 KB (130 MiB)"
+  },
+  "notProposed": [
+    "query budget",
+    "scroll budget",
+    "kill/restart budget",
+    "specific heap budget",
+    "Alpha-wide budget",
+    "Android minimum/intermediate matrix budget",
+    "iOS budget"
+  ],
+  "initialCharacterization": {
+    "evidenceId": "SP007-S23-ATTEMPT-002",
+    "budgetApplied": false,
+    "evaluatedAgainstTheseBudgets": false
+  },
+  "formalRun": {
+    "started": false,
+    "result": "NOT-EXECUTED"
+  }
+}
