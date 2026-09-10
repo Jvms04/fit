@@ -54,5 +54,9 @@ export function validateWp002State(state) {
     errors.push("an aborted diagnostic attempt cannot be promoted as characterization evidence");
   }
 
+  if (state?.platforms?.androidPhysical?.budgets?.formalRunStarted !== false) {
+    errors.push("formal S23 run must remain not started during executable preparation");
+  }
+
   return errors;
 }

@@ -47,6 +47,9 @@
         "status": "APPROVED-PREREGISTERED",
         "record": "SP007_S23_BUDGETS.json",
         "retrospectiveApplication": false,
+        "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
+        "formalRunPreparation": "PREPARED-NOT-EXECUTED",
+        "formalRunner": "tests/performance/wp-002/formal-android.mjs",
         "formalRunStarted": false
       }
     },

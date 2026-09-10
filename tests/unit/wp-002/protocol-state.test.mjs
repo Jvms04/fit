@@ -17,7 +17,12 @@ const baseState = {
     { id: "VAL-016@P0", status: "INCONCLUSIVE" }
   ],
   platforms: {
-    androidPhysical: { device: "Samsung Galaxy S23", os: "Android 16", status: "NOT-EXECUTED" },
+    androidPhysical: {
+      device: "Samsung Galaxy S23",
+      os: "Android 16",
+      status: "NOT-EXECUTED",
+      budgets: { formalRunStarted: false }
+    },
     iosPhysical: { status: "BLOCKED", reason: "No iPhone/macOS/Xcode/provisioning available" }
   }
 };
@@ -54,5 +59,17 @@ test("rejects an aborted diagnostic attempt promoted as characterization evidenc
 
   assert.ok(
     validateWp002State(state).some((error) => error.includes("aborted diagnostic"))
+  );
+});
+
+test("rejects recording the formal S23 run as started during preparation", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true
+  };
+
+  assert.ok(
+    validateWp002State(state).some((error) => error.includes("formal S23 run must remain not started"))
   );
 });

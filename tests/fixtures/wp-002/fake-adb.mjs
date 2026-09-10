@@ -80,7 +80,8 @@ if (command.join(" ").startsWith("shell am start -W -n ")) {
   process.exit(0);
 }
 if (command.join(" ").startsWith("shell dumpsys meminfo ")) {
-  process.stdout.write(" TOTAL PSS: 183420 TOTAL RSS: 240000\n");
+  const totalPssKb = process.env.FAKE_ADB_PSS_KB ?? "183420";
+  process.stdout.write(` TOTAL PSS: ${totalPssKb} TOTAL RSS: 240000\n`);
   process.exit(0);
 }
 if (command[0] === "shell" && command[1] === "getprop") {

@@ -9,3 +9,21 @@ The screen and data are synthetic. The harness enables SQLCipher through Expo pr
 No numeric result is a budget until a human approves and preregisters that budget. The initial runner deliberately rejects the 30-run sample count reserved for the formal `VAL-001` protocol.
 
 For the initial cold/warm characterization, the host runner uses `KEYCODE_BACK` before a requested warm relaunch and trusts the Android-reported launch state. Only `COLD`/`WARM` samples with `TotalTime` are eligible. `UNKNOWN (0)`, a different launch state, or missing `TotalTime` makes the attempt diagnostic-only; `WaitTime` remains raw and is never substituted.
+
+The formal S23 runner is a separate executable at `../../performance/wp-002/formal-android.mjs`. It has a fixed 30 cold + 30 warm protocol and reads the approved budgets from preregistration commit `4f108a56d1b3553836eac65662d449809715ee87`; it does not accept a sample-count override. Before running it, check out the exact green preparation head, download and install that head's `wp-002-android-probe` release APK, and explicitly select the Galaxy S23 ADB serial.
+
+From the repository root in PowerShell, preserve the runner exit status and write its JSON report explicitly as UTF-8:
+
+```powershell
+$report = & node tests/performance/wp-002/formal-android.mjs `
+  --adb C:\platform-tools\adb.exe `
+  --serial $env:FIT_S23_ADB_SERIAL `
+  --repo-root . `
+  --preregistration-commit 4f108a56d1b3553836eac65662d449809715ee87
+$runnerExit = $LASTEXITCODE
+$report | Set-Content -Path sp007-s23-formal-30.json -Encoding utf8
+Write-Host "formal runner exit code: $runnerExit"
+exit $runnerExit
+```
+
+An exit code does not promote `SP-007` or `VAL-001`. Preserve the output without editing and submit it for independent review. Query, scroll, kill/restart, and specific heap budgets remain `NOT-PROPOSED`; iOS remains `BLOCKED`.
