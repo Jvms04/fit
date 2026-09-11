@@ -1,0 +1,2 @@
+ApplicationExitInfo #0:
+  process=com.fit.wp002probe reason=10 (...) subreason=21 (...) status=0

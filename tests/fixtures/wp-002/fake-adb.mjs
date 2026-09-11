@@ -17,7 +17,8 @@ function readState() {
         nextLaunchState: "UNKNOWN (0)", coldCount: 0, warmCount: 0,
         forceStopCount: 0, preflightStarted: false, exitRecords: [],
         activityTopResumed: false, warmLaunchAttemptCount: 0,
-        keyBackCount: 0, processAlive: false
+        keyBackCount: 0, processAlive: false, exitSequence: 0,
+        midrunCrashInjected: false
       };
     }
     throw error;
@@ -28,15 +29,12 @@ function writeState(state) {
   writeFileSync(statePath, JSON.stringify(state));
 }
 
-function exitRecord({ index, reason, label, processName = "com.fit.wp002probe", status = 0 }) {
+function exitRecord({ index, eventId = index, reason, label, processName = "com.fit.wp002probe", status = 0 }) {
   return [
     `ApplicationExitInfo #${index}:`,
-    `  timestamp=2026-09-10 10:${String(index).padStart(2, "0")}:00.000`,
-    `  pid=${5000 + index}`,
-    `  process=${processName}`,
-    `  reason=${reason} (${label})`,
-    `  status=${status}`,
-    `  description=${label}`
+    `  timestamp=2026-09-10 10:${String(eventId % 60).padStart(2, "0")}:00.000 pid=${5000 + eventId} realUid=10345 packageUid=10345 definingUid=10345 user=0`,
+    `  process=${processName} reason=${reason} (${label}) subreason=0 (UNKNOWN) status=${status}`,
+    `  importance=100 pss=110000kB rss=190000kB description=${label}`
   ].join("\n");
 }
 
@@ -107,7 +105,10 @@ if (joined.startsWith("shell am force-stop ")) {
   state.nextLaunchState = "COLD";
   state.activityTopResumed = false;
   state.processAlive = false;
-  state.exitRecords.unshift({ reason: 10, label: "user request", status: 0 });
+  state.exitSequence = (state.exitSequence ?? 0) + 1;
+  state.exitRecords.unshift({
+    eventId: state.exitSequence, reason: 10, label: "user request", status: 0
+  });
   writeState(state);
   process.exit(0);
 }
@@ -181,6 +182,14 @@ if (joined.startsWith("shell am start -W -n ")) {
   const measured = launchState === "COLD" || launchState === "WARM";
   const counterKey = launchState === "COLD" ? "coldCount" : "warmCount";
   state[counterKey] += 1;
+  const crashAfterWarm = Number(process.env.FAKE_ADB_MIDRUN_CRASH_AFTER_WARM ?? "-1");
+  if (launchState === "WARM" && state.warmCount === crashAfterWarm && !state.midrunCrashInjected) {
+    state.exitSequence = (state.exitSequence ?? 0) + 1;
+    state.exitRecords.unshift({
+      eventId: state.exitSequence, reason: 4, label: "crash", status: 0
+    });
+    state.midrunCrashInjected = true;
+  }
   state.activityTopResumed = true;
   state.processAlive = true;
   writeState(state);
@@ -201,7 +210,8 @@ if (joined.startsWith("shell dumpsys meminfo ")) {
   process.exit(0);
 }
 if (joined.startsWith("shell dumpsys activity exit-info ")) {
-  const records = [...state.exitRecords];
+  const historyLimit = Number(process.env.FAKE_ADB_EXIT_HISTORY_LIMIT ?? "1000");
+  const records = [...state.exitRecords].slice(0, historyLimit);
   if (state.coldCount > 0 && process.env.FAKE_ADB_PROBE_EXIT_REASON) {
     records.unshift({
       reason: Number(process.env.FAKE_ADB_PROBE_EXIT_REASON),

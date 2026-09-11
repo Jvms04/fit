@@ -29,6 +29,18 @@ function identity(record) {
   return [record.timestamp, record.pid, record.process, record.reason, record.status].join("|");
 }
 
+function parseLineFields(line) {
+  const matches = [...String(line).matchAll(/(?:^|\s+)([A-Za-z][A-Za-z0-9]*)=/gu)];
+  const fields = [];
+  for (let index = 0; index < matches.length; index += 1) {
+    const match = matches[index];
+    const valueStart = match.index + match[0].length;
+    const valueEnd = matches[index + 1]?.index ?? line.length;
+    fields.push([match[1], line.slice(valueStart, valueEnd).trim()]);
+  }
+  return fields;
+}
+
 export function parseProcessExitInfo(raw, packageName) {
   const records = [];
   const blocks = String(raw).split(/(?=ApplicationExitInfo #\d+:)/u);
@@ -39,9 +51,8 @@ export function parseProcessExitInfo(raw, packageName) {
     }
     const values = new Map();
     for (const line of block.split(/\r?\n/u).slice(1)) {
-      const match = line.match(/^\s*([A-Za-z]+)=(.*)$/u);
-      if (match) {
-        values.set(match[1], match[2].trim());
+      for (const [name, value] of parseLineFields(line)) {
+        values.set(name, value);
       }
     }
     const processName = values.get("process") ?? "";

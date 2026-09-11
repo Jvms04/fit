@@ -66,18 +66,32 @@ export function validateWp002State(state) {
   }
 
   for (const attempt of formalAttempts) {
-    if (attempt.classification !== "ABORTED_DIAGNOSTIC" ||
-        attempt.formalValidation !== false || attempt.characterizationEvidence !== false) {
-      errors.push(`${attempt.id ?? "formal attempt"} must remain aborted diagnostic evidence only`);
-    }
-    if (attempt.warmBudgetEvaluated !== false) {
-      errors.push(`${attempt.id ?? "formal attempt"} cannot evaluate the warm budget without a valid warm set`);
+    const id = attempt.id ?? "formal attempt";
+    if (attempt.classification === "ABORTED_DIAGNOSTIC") {
+      if (attempt.formalValidation !== false || attempt.characterizationEvidence !== false) {
+        errors.push(`${id} must remain aborted diagnostic evidence only`);
+      }
+      if (attempt.warmBudgetEvaluated !== false) {
+        errors.push(`${id} cannot evaluate the warm budget without a valid warm set`);
+      }
+    } else if (attempt.classification === "FORMAL_RUN_EVIDENCE_CANDIDATE") {
+      if (attempt.formalValidation !== false) {
+        errors.push(`${id} cannot claim formal validation while zero-crash evidence is incomplete`);
+      }
+      if (attempt.performanceEvidenceAccepted !== true || attempt.warmEvidenceAccepted !== true) {
+        errors.push(`${id} must preserve the independently accepted performance and warm evidence`);
+      }
+      if (attempt.zeroCrashCriterionEvidence !== "INSUFFICIENT-FOR-GATE") {
+        errors.push(`${id} zero-crash evidence must remain INSUFFICIENT-FOR-GATE`);
+      }
+    } else {
+      errors.push(`${id} has unsupported formal-attempt classification '${attempt.classification}'`);
     }
     if (attempt.stackFailureEvidence !== false) {
-      errors.push(`${attempt.id ?? "formal attempt"} cannot be treated as stack failure evidence`);
+      errors.push(`${id} cannot be treated as stack failure evidence`);
     }
     if (attempt.fallbackAuthorized !== false) {
-      errors.push(`${attempt.id ?? "formal attempt"} cannot authorize fallback`);
+      errors.push(`${id} cannot authorize fallback`);
     }
   }
 

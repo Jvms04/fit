@@ -116,3 +116,47 @@ test("rejects treating an invalid warm set as budget, stack-failure, or fallback
   assert.ok(errors.some((error) => error.includes("stack failure")));
   assert.ok(errors.some((error) => error.includes("fallback")));
 });
+
+test("accepts Attempt 002 performance evidence while zero-crash remains insufficient for gate", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-002-PERFORMANCE-ACCEPTED-CRASH-INSUFFICIENT"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-002",
+    classification: "FORMAL_RUN_EVIDENCE_CANDIDATE",
+    formalValidation: false,
+    performanceEvidenceAccepted: true,
+    warmEvidenceAccepted: true,
+    zeroCrashCriterionEvidence: "INSUFFICIENT-FOR-GATE",
+    stackFailureEvidence: false,
+    fallbackAuthorized: false
+  }];
+
+  assert.deepEqual(validateWp002State(state), []);
+});
+
+test("rejects promoting Attempt 002 zero-crash or formal validation without complete evidence", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-002-PERFORMANCE-ACCEPTED-CRASH-INSUFFICIENT"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-002",
+    classification: "FORMAL_RUN_EVIDENCE_CANDIDATE",
+    formalValidation: true,
+    performanceEvidenceAccepted: true,
+    warmEvidenceAccepted: true,
+    zeroCrashCriterionEvidence: "SUFFICIENT-FOR-GATE",
+    stackFailureEvidence: false,
+    fallbackAuthorized: false
+  }];
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("formal validation")));
+  assert.ok(errors.some((error) => error.includes("zero-crash")));
+});

@@ -12,7 +12,7 @@ import process from "node:process";
 import { parseAmStartOutput, parseDeviceList, parseTotalPssKb } from "./lib/android-output.mjs";
 import { evaluateLaunchAttempts, summarizeDurations } from "./lib/metrics.mjs";
 import { portableInvocation } from "./lib/portable-command.mjs";
-import { classifyNewProcessExits } from "./lib/process-exit.mjs";
+import { parseProcessExitInfo } from "./lib/process-exit.mjs";
 
 const BUDGET_PATH = "docs/evidence/wp-002/SP007_S23_BUDGETS.json";
 const SAMPLE_COUNT = 30;
@@ -273,7 +273,10 @@ function createState() {
       launch: null,
       protocolClassification: "NOT-EXECUTED"
     },
-    crashEvidence: { beforeRaw: "", afterRaw: "", abnormalRecords: [], expectedProtocolRecords: [] },
+    crashEvidence: {
+      beforeRaw: "", afterRaw: "", baselineRecords: [], observations: [],
+      abnormalRecords: [], expectedProtocolRecords: []
+    },
     acquisitionStarted: false,
     interruption: null
   };
@@ -399,6 +402,7 @@ function run() {
   let installedCopyDirectory = null;
   let serial = null;
   let adb = null;
+  let observedExitIds = null;
 
   const sanitize = (value) => serial ? String(value).split(serial).join("<redacted-serial>") : String(value);
   const adbExecute = (commandArgs, selected = true) => execute(adb, selected ? ["-s", serial, ...commandArgs] : commandArgs);
@@ -421,12 +425,37 @@ function run() {
     const result = adbExecute(["shell", "dumpsys", "activity", "exit-info", PACKAGE_NAME]);
     state.commandLog.push({
       phase, arguments: ["shell", "dumpsys", "activity", "exit-info", PACKAGE_NAME],
-      exitCode: result.exitCode, stdout: sanitize(result.stdout), stderr: sanitize(result.stderr)
+      exitCode: result.exitCode, stdout: "<preserved-in-crash-evidence>", stderr: sanitize(result.stderr)
     });
     if (result.exitCode !== 0 && !bestEffort) {
       throw new ProtocolError("package-scoped process exit evidence unavailable", phase, ["adb", "dumpsys", "activity", "exit-info"], result.exitCode);
     }
     return result.exitCode === 0 ? result.stdout : "";
+  };
+  const initializeExitEvidence = (raw) => {
+    const baselineRecords = parseProcessExitInfo(raw, PACKAGE_NAME);
+    observedExitIds = new Set(baselineRecords.map((record) => record.identity));
+    state.crashEvidence.baselineRecords = baselineRecords;
+  };
+  const observeExitEvidence = (phase, bestEffort = false) => {
+    const raw = captureExitInfo(phase, bestEffort);
+    const sanitizedRaw = sanitize(raw);
+    const observedRecords = parseProcessExitInfo(raw, PACKAGE_NAME);
+    const newRecords = observedRecords.filter((record) => !observedExitIds.has(record.identity));
+    for (const record of newRecords) observedExitIds.add(record.identity);
+    const expectedProtocolRecords = newRecords.filter((record) => record.reason === 10);
+    const abnormalRecords = newRecords.filter((record) => record.reason !== 10);
+    state.crashEvidence.expectedProtocolRecords.push(...expectedProtocolRecords);
+    state.crashEvidence.abnormalRecords.push(...abnormalRecords);
+    state.crashEvidence.observations.push({
+      phase,
+      raw: sanitizedRaw,
+      observedRecordIds: observedRecords.map((record) => record.identity),
+      newRecordIds: newRecords.map((record) => record.identity),
+      expectedProtocolRecordIds: expectedProtocolRecords.map((record) => record.identity),
+      abnormalRecordIds: abnormalRecords.map((record) => record.identity)
+    });
+    return raw;
   };
   const prepareWarm = (phasePrefix) => {
     runAdb(`${phasePrefix}-background`, ["shell", "input", "keyevent", "KEYCODE_BACK"]);
@@ -628,6 +657,7 @@ function run() {
 
     runAdb("crash-baseline-force-stop", ["shell", "am", "force-stop", PACKAGE_NAME]);
     state.crashEvidence.beforeRaw = captureExitInfo("crash-baseline");
+    initializeExitEvidence(state.crashEvidence.beforeRaw);
     state.acquisitionStarted = true;
     for (let index = 0; index < SAMPLE_COUNT; index += 1) {
       const sample = index + 1;
@@ -648,17 +678,9 @@ function run() {
       }
       const warmOutput = runAdb(`warm-${sample}-launch`, ["shell", "am", "start", "-W", "-n", ACTIVITY]);
       state.warm.push({ sample, launch: parseAmStartOutput(warmOutput) });
+      observeExitEvidence(`crash-sample-${sample}`);
     }
-    state.crashEvidence.afterRaw = captureExitInfo("crash-final");
-    const processExits = classifyNewProcessExits(
-      state.crashEvidence.beforeRaw, state.crashEvidence.afterRaw, PACKAGE_NAME
-    );
-    state.crashEvidence = {
-      beforeRaw: state.crashEvidence.beforeRaw,
-      afterRaw: state.crashEvidence.afterRaw,
-      expectedProtocolRecords: processExits.expectedProtocolRecords,
-      abnormalRecords: processExits.abnormalRecords
-    };
+    state.crashEvidence.afterRaw = observeExitEvidence("crash-final");
     const report = buildReport(state);
     return { report, exitCode: report.criteria.runnerCriteriaMet ? 0 : 2 };
   } catch (error) {
@@ -666,12 +688,7 @@ function run() {
       ? error
       : new ProtocolError(error.message, state.phase);
     if (adb && serial && state.acquisitionStarted) {
-      state.crashEvidence.afterRaw = captureExitInfo("crash-after-interruption", true);
-      const processExits = classifyNewProcessExits(
-        state.crashEvidence.beforeRaw, state.crashEvidence.afterRaw, PACKAGE_NAME
-      );
-      state.crashEvidence.expectedProtocolRecords = processExits.expectedProtocolRecords;
-      state.crashEvidence.abnormalRecords = processExits.abnormalRecords;
+      state.crashEvidence.afterRaw = observeExitEvidence("crash-after-interruption", true);
     }
     state.interruption = {
       phase: failure.phase,

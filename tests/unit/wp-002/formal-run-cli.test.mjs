@@ -515,6 +515,41 @@ test("does not let another application's crash contaminate the probe result", ()
   }
 });
 
+test("retains a mid-run probe crash even after bounded ApplicationExitInfo history evicts it", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, {
+      FAKE_ADB_MIDRUN_CRASH_AFTER_WARM: "5",
+      FAKE_ADB_EXIT_HISTORY_LIMIT: "4"
+    });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+
+    assert.deepEqual(report.completed, { cold: 30, warm: 30 });
+    assert.equal(report.criteria.observedCrashes, 1);
+    assert.equal(report.crashEvidence.abnormalRecords.length, 1);
+    assert.equal(report.crashEvidence.abnormalRecords[0].category, "JAVA_CRASH");
+    assert.equal(report.crashEvidence.expectedProtocolRecords.length, 30);
+    assert.equal(report.crashEvidence.observations.length, 31);
+    assert.equal(
+      new Set(report.crashEvidence.expectedProtocolRecords.map((record) => record.identity)).size,
+      30,
+      "incremental snapshots must not count the same protocol force-stop twice"
+    );
+    assert.ok(
+      report.crashEvidence.observations.some((observation) =>
+        observation.newRecordIds.includes(report.crashEvidence.abnormalRecords[0].identity)
+      )
+    );
+    assert.ok(
+      !report.crashEvidence.afterRaw.includes(report.crashEvidence.abnormalRecords[0].raw),
+      "the final bounded history should have evicted the crash"
+    );
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
 test("preserves missing or invalid cold TOTAL PSS as an invalid diagnostic", () => {
   const fixture = createExecutionRepository();
   try {

@@ -63,6 +63,38 @@
           "warmBudgetEvaluated": false,
           "stackFailureEvidence": false,
           "fallbackAuthorized": false
+        },
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-002",
+          "classification": "FORMAL_RUN_EVIDENCE_CANDIDATE",
+          "disposition": "PERFORMANCE-ACCEPTED-CRASH-EVIDENCE-INSUFFICIENT",
+          "formalValidation": false,
+          "performanceEvidenceAccepted": true,
+          "warmEvidenceAccepted": true,
+          "zeroCrashCriterionEvidence": "INSUFFICIENT-FOR-GATE",
+          "rawArtifact": "EXTERNAL-HUMAN-CUSTODY",
+          "rawArtifactName": "sp007-s23-formal-attempt-002.json",
+          "rawArtifactSizeBytes": 7674836,
+          "rawArtifactSha256": "a9ecc61f10aff94a978a253b717cf01c60ad34e5e6ece01f148967a86fcb7041",
+          "minimizedEvidence": "raw/SP007_S23_FORMAL_ATTEMPT_002_MINIMIZED.md",
+          "harnessHead": "7e5017bf801f872ee6d53f653890e91a2cd71a7e",
+          "ciArtifactId": 10265024441,
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 30 },
+          "measurements": {
+            "coldStartupTotalTimeP95Ms": 173,
+            "warmStartupTotalTimeP95Ms": 112,
+            "coldTotalPssP95Kb": 110087,
+            "warmPreflight": "WARM / MEASURED"
+          },
+          "retainedExitInfoReanalysis": {
+            "retainedNewRecords": 16,
+            "expectedProtocolRecords": 16,
+            "abnormalRecords": 0,
+            "completeSequenceCoverage": false
+          },
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
         }
       ],
       "budgets": {
@@ -70,10 +102,10 @@
         "record": "SP007_S23_BUDGETS.json",
         "retrospectiveApplication": false,
         "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
-        "formalRunPreparation": "CORRECTION-PENDING-HUMAN-GATE",
+        "formalRunPreparation": "CRASH-EVIDENCE-CORRECTION-PENDING-HUMAN-GATE",
         "formalRunner": "tests/performance/wp-002/formal-android.mjs",
         "formalRunStarted": true,
-        "formalRunResult": "ATTEMPT-001-ABORTED_DIAGNOSTIC",
+        "formalRunResult": "ATTEMPT-002-PERFORMANCE-ACCEPTED-CRASH-INSUFFICIENT",
         "nextFormalRun": "NOT-AUTHORIZED"
       }
     },

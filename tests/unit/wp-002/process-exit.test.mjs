@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   classifyNewProcessExits,
   parseProcessExitInfo
 } from "../../performance/wp-002/lib/process-exit.mjs";
+
+const physicalS23Fixture = readFileSync(
+  new URL("../../fixtures/wp-002/application-exit-info-s23.txt", import.meta.url),
+  "utf8"
+);
 
 function exitRecord({ index, timestamp, reason, label, status = 0, process = "com.fit.wp002probe" }) {
   return [
@@ -90,5 +96,27 @@ test("parses only the requested package process family", () => {
   assert.deepEqual(
     parseProcessExitInfo(raw, "com.fit.wp002probe").map((record) => record.process),
     ["com.fit.wp002probe", "com.fit.wp002probe:worker"]
+  );
+});
+
+test("parses the physical S23 multi-field line and recognizes protocol force-stop", () => {
+  const result = classifyNewProcessExits("", physicalS23Fixture, "com.fit.wp002probe");
+
+  assert.equal(result.newRecords.length, 1);
+  assert.equal(result.expectedProtocolRecords.length, 1);
+  assert.equal(result.abnormalRecords.length, 0);
+  assert.deepEqual(
+    {
+      process: result.expectedProtocolRecords[0].process,
+      reason: result.expectedProtocolRecords[0].reason,
+      status: result.expectedProtocolRecords[0].status,
+      category: result.expectedProtocolRecords[0].category
+    },
+    {
+      process: "com.fit.wp002probe",
+      reason: 10,
+      status: 0,
+      category: "PROTOCOL_FORCE_STOP"
+    }
   );
 });
