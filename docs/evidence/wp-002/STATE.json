@@ -95,6 +95,43 @@
           },
           "stackFailureEvidence": false,
           "fallbackAuthorized": false
+        },
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-003",
+          "classification": "FORMAL_RUN_EVIDENCE_CANDIDATE",
+          "disposition": "S23-LINE-ACCEPTED-BY-HUMAN-REVIEW",
+          "formalValidation": false,
+          "performanceEvidenceAccepted": true,
+          "warmEvidenceAccepted": true,
+          "zeroCrashCriterionEvidence": "ACCEPTED-FOR-S23-LINE",
+          "runnerCriteriaMet": true,
+          "humanReview": "APPROVED-FOR-S23-LINE",
+          "rawArtifact": "EXTERNAL-HUMAN-CUSTODY",
+          "rawArtifactName": "sp007-s23-formal-attempt-003.json",
+          "rawArtifactSizeBytes": 8963470,
+          "rawArtifactSha256": "8dd6717c1513434d4a4af0f1553a71e6bd7c897510947c81c9dfd25ade71c216",
+          "minimizedEvidence": "raw/SP007_S23_FORMAL_ATTEMPT_003_MINIMIZED.md",
+          "harnessHead": "82878218cf432998bd6b9582ca0b3e88873c68e0",
+          "ciArtifactId": 10269505251,
+          "apkSha256": "5fd2ca6ebd7c1f75c4e662b1a66d48188bf039cad4b93bed23d66f219e354b69",
+          "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 30 },
+          "measurements": {
+            "coldStartupTotalTimeP95Ms": 209,
+            "warmStartupTotalTimeP95Ms": 131,
+            "coldTotalPssP95Kb": 107711
+          },
+          "crashEvidence": {
+            "checkpoints": 31,
+            "uniqueNewRecords": 29,
+            "expectedProtocolRecords": 29,
+            "expectedReason": "10 / PROTOCOL_FORCE_STOP",
+            "abnormalRecords": 0,
+            "observedCrashes": 0
+          },
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
         }
       ],
       "budgets": {
@@ -102,11 +139,11 @@
         "record": "SP007_S23_BUDGETS.json",
         "retrospectiveApplication": false,
         "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
-        "formalRunPreparation": "CRASH-EVIDENCE-CORRECTION-PENDING-HUMAN-GATE",
+        "formalRunPreparation": "S23-LINE-CLOSEOUT-RECORDED",
         "formalRunner": "tests/performance/wp-002/formal-android.mjs",
         "formalRunStarted": true,
-        "formalRunResult": "ATTEMPT-002-PERFORMANCE-ACCEPTED-CRASH-INSUFFICIENT",
-        "nextFormalRun": "NOT-AUTHORIZED"
+        "formalRunResult": "ATTEMPT-003-S23-LINE-ACCEPTED",
+        "nextFormalRun": "ATTEMPT-004-PROHIBITED"
       }
     },
     "iosPhysical": {

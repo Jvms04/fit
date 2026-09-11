@@ -160,3 +160,77 @@ test("rejects promoting Attempt 002 zero-crash or formal validation without comp
   assert.ok(errors.some((error) => error.includes("formal validation")));
   assert.ok(errors.some((error) => error.includes("zero-crash")));
 });
+
+test("accepts human-reviewed Attempt 003 for the S23 line without promoting SP-007 or VAL-001", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-003-S23-LINE-ACCEPTED",
+    nextFormalRun: "ATTEMPT-004-PROHIBITED"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-003",
+    classification: "FORMAL_RUN_EVIDENCE_CANDIDATE",
+    disposition: "S23-LINE-ACCEPTED-BY-HUMAN-REVIEW",
+    formalValidation: false,
+    performanceEvidenceAccepted: true,
+    warmEvidenceAccepted: true,
+    zeroCrashCriterionEvidence: "ACCEPTED-FOR-S23-LINE",
+    runnerCriteriaMet: true,
+    humanReview: "APPROVED-FOR-S23-LINE",
+    completed: { cold: 30, warm: 30 },
+    validSamples: { cold: 30, warm: 30 },
+    crashEvidence: {
+      checkpoints: 31,
+      uniqueNewRecords: 29,
+      expectedProtocolRecords: 29,
+      abnormalRecords: 0,
+      observedCrashes: 0
+    },
+    stackFailureEvidence: false,
+    fallbackAuthorized: false
+  }];
+
+  assert.deepEqual(validateWp002State(state), []);
+  assert.equal(state.protocols.find(({ id }) => id === "SP-007").status, "IN-PROGRESS");
+  assert.equal(state.protocols.find(({ id }) => id === "VAL-001").status, "NOT-EXECUTED");
+});
+
+test("rejects S23 Attempt 003 acceptance with incomplete crash evidence or canonical promotion", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-001").status = "PASS";
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-003-S23-LINE-ACCEPTED",
+    nextFormalRun: "ATTEMPT-004-PROHIBITED"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-003",
+    classification: "FORMAL_RUN_EVIDENCE_CANDIDATE",
+    disposition: "S23-LINE-ACCEPTED-BY-HUMAN-REVIEW",
+    formalValidation: true,
+    performanceEvidenceAccepted: true,
+    warmEvidenceAccepted: true,
+    zeroCrashCriterionEvidence: "ACCEPTED-FOR-S23-LINE",
+    runnerCriteriaMet: true,
+    humanReview: "APPROVED-FOR-S23-LINE",
+    completed: { cold: 30, warm: 30 },
+    validSamples: { cold: 30, warm: 30 },
+    crashEvidence: {
+      checkpoints: 31,
+      uniqueNewRecords: 28,
+      expectedProtocolRecords: 29,
+      abnormalRecords: 0,
+      observedCrashes: 0
+    },
+    stackFailureEvidence: false,
+    fallbackAuthorized: false
+  }];
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("VAL-001") && error.includes("PASS")));
+  assert.ok(errors.some((error) => error.includes("canonical formal validation")));
+  assert.ok(errors.some((error) => error.includes("29 unique protocol force-stops")));
+});

@@ -76,13 +76,42 @@ export function validateWp002State(state) {
       }
     } else if (attempt.classification === "FORMAL_RUN_EVIDENCE_CANDIDATE") {
       if (attempt.formalValidation !== false) {
-        errors.push(`${id} cannot claim formal validation while zero-crash evidence is incomplete`);
+        errors.push(`${id} cannot claim canonical formal validation`);
       }
       if (attempt.performanceEvidenceAccepted !== true || attempt.warmEvidenceAccepted !== true) {
         errors.push(`${id} must preserve the independently accepted performance and warm evidence`);
       }
-      if (attempt.zeroCrashCriterionEvidence !== "INSUFFICIENT-FOR-GATE") {
-        errors.push(`${id} zero-crash evidence must remain INSUFFICIENT-FOR-GATE`);
+      if (attempt.zeroCrashCriterionEvidence === "ACCEPTED-FOR-S23-LINE") {
+        if (
+          attempt.disposition !== "S23-LINE-ACCEPTED-BY-HUMAN-REVIEW" ||
+          attempt.humanReview !== "APPROVED-FOR-S23-LINE" ||
+          attempt.runnerCriteriaMet !== true
+        ) {
+          errors.push(`${id} S23 acceptance requires runner criteria and explicit human review`);
+        }
+        if (
+          attempt.completed?.cold !== 30 ||
+          attempt.completed?.warm !== 30 ||
+          attempt.validSamples?.cold !== 30 ||
+          attempt.validSamples?.warm !== 30
+        ) {
+          errors.push(`${id} S23 acceptance requires exactly 30/30 valid cold and warm samples`);
+        }
+        const crash = attempt.crashEvidence;
+        if (
+          crash?.checkpoints !== 31 ||
+          crash?.uniqueNewRecords !== 29 ||
+          crash?.expectedProtocolRecords !== 29 ||
+          crash?.abnormalRecords !== 0 ||
+          crash?.observedCrashes !== 0
+        ) {
+          errors.push(`${id} S23 acceptance requires 31 checkpoints and 29 unique protocol force-stops with zero abnormal exits/crashes`);
+        }
+        if (android?.budgets?.nextFormalRun !== "ATTEMPT-004-PROHIBITED") {
+          errors.push(`${id} must preserve the prohibition on Formal Attempt 004`);
+        }
+      } else if (attempt.zeroCrashCriterionEvidence !== "INSUFFICIENT-FOR-GATE") {
+        errors.push(`${id} has unsupported zero-crash evidence '${attempt.zeroCrashCriterionEvidence}'`);
       }
     } else {
       errors.push(`${id} has unsupported formal-attempt classification '${attempt.classification}'`);
