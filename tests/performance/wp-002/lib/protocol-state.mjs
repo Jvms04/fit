@@ -54,8 +54,31 @@ export function validateWp002State(state) {
     errors.push("an aborted diagnostic attempt cannot be promoted as characterization evidence");
   }
 
-  if (state?.platforms?.androidPhysical?.budgets?.formalRunStarted !== false) {
-    errors.push("formal S23 run must remain not started during executable preparation");
+  const android = state?.platforms?.androidPhysical;
+  const formalRunStarted = android?.budgets?.formalRunStarted;
+  const formalAttempts = android?.formalAttempts ?? [];
+  if (formalRunStarted === true && formalAttempts.length === 0) {
+    errors.push("formal S23 run was marked started without a recorded formal attempt");
+  } else if (formalRunStarted === false && formalAttempts.length > 0) {
+    errors.push("recorded formal attempts require formalRunStarted to reflect that execution occurred");
+  } else if (formalRunStarted !== true && formalRunStarted !== false) {
+    errors.push("formalRunStarted must be an explicit boolean");
+  }
+
+  for (const attempt of formalAttempts) {
+    if (attempt.classification !== "ABORTED_DIAGNOSTIC" ||
+        attempt.formalValidation !== false || attempt.characterizationEvidence !== false) {
+      errors.push(`${attempt.id ?? "formal attempt"} must remain aborted diagnostic evidence only`);
+    }
+    if (attempt.warmBudgetEvaluated !== false) {
+      errors.push(`${attempt.id ?? "formal attempt"} cannot evaluate the warm budget without a valid warm set`);
+    }
+    if (attempt.stackFailureEvidence !== false) {
+      errors.push(`${attempt.id ?? "formal attempt"} cannot be treated as stack failure evidence`);
+    }
+    if (attempt.fallbackAuthorized !== false) {
+      errors.push(`${attempt.id ?? "formal attempt"} cannot authorize fallback`);
+    }
   }
 
   return errors;

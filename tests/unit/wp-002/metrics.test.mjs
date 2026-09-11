@@ -81,3 +81,23 @@ test("classifies an empty TotalTime field as invalid rather than MEASURED zero",
   assert.equal(result.measuredCount, 0);
   assert.equal(result.records[0].protocolClassification, "MISSING_OR_INVALID_TOTAL_TIME");
 });
+
+test("classifies Android top-most intent redelivery as not a warm launch event", () => {
+  const launch = parseAmStartOutput([
+    "Status: ok",
+    "LaunchState: UNKNOWN (0)",
+    "Activity: com.fit.wp002probe/.MainActivity",
+    "TotalTime: 0",
+    "WaitTime: 18",
+    "Warning: Activity not started, intent has been delivered to currently running top-most instance.",
+    "Complete"
+  ].join("\n"));
+
+  const result = metrics.evaluateLaunchAttempts([{ sample: 1, launch }], "WARM");
+
+  assert.equal(launch.launchState, "UNKNOWN (0)");
+  assert.equal(launch.totalTimeMs, 0);
+  assert.equal(result.measuredCount, 0);
+  assert.equal(result.records[0].protocolClassification, "NOT_A_LAUNCH_EVENT");
+  assert.equal(result.totalTime, null);
+});

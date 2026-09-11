@@ -15,7 +15,9 @@ function readState() {
     if (error.code === "ENOENT") {
       return {
         nextLaunchState: "UNKNOWN (0)", coldCount: 0, warmCount: 0,
-        forceStopCount: 0, preflightStarted: false, exitRecords: []
+        forceStopCount: 0, preflightStarted: false, exitRecords: [],
+        activityTopResumed: false, warmLaunchAttemptCount: 0,
+        keyBackCount: 0, processAlive: false
       };
     }
     throw error;
@@ -103,22 +105,45 @@ if (joined.startsWith("shell am force-stop ")) {
   }
   state.forceStopCount += 1;
   state.nextLaunchState = "COLD";
+  state.activityTopResumed = false;
+  state.processAlive = false;
   state.exitRecords.unshift({ reason: 10, label: "user request", status: 0 });
   writeState(state);
   process.exit(0);
 }
 if (joined.startsWith("shell input keyevent ")) {
   const keycode = command.at(-1);
-  state.nextLaunchState = process.env.FAKE_ADB_FORCE_UNKNOWN === "1"
+  state.keyBackCount = (state.keyBackCount ?? 0) + 1;
+  const stuckAfter = Number(process.env.FAKE_ADB_WARM_ACTIVITY_STUCK_AFTER ?? "-1");
+  const warmActivityStuck = process.env.FAKE_ADB_WARM_ACTIVITY_STUCK === "1" ||
+    (Number.isInteger(stuckAfter) && stuckAfter >= 1 && state.keyBackCount >= stuckAfter);
+  state.nextLaunchState = process.env.FAKE_ADB_FORCE_UNKNOWN === "1" || warmActivityStuck
     ? "UNKNOWN (0)"
     : keycode === "KEYCODE_BACK" ? "WARM" : "UNKNOWN (0)";
+  state.activityTopResumed = warmActivityStuck;
+  if (process.env.FAKE_ADB_PROCESS_DIES_ON_BACK === "1") state.processAlive = false;
   writeState(state);
+  process.exit(0);
+}
+if (joined.startsWith("shell dumpsys activity activities ")) {
+  const resumedComponent = state.activityTopResumed
+    ? "com.fit.wp002probe/.MainActivity"
+    : "com.sec.android.app.launcher/.Launcher";
+  process.stdout.write([
+    "ACTIVITY MANAGER ACTIVITIES (dumpsys activity activities)",
+    `mResumedActivity: ActivityRecord{synthetic u0 ${resumedComponent} t1}`,
+    `topResumedActivity=ActivityRecord{synthetic u0 ${resumedComponent} t1}`,
+    "* Hist #0: ActivityRecord{synthetic u0 com.fit.wp002probe/.MainActivity t2}",
+    ""
+  ].join("\n"));
   process.exit(0);
 }
 if (joined.startsWith("shell am start -W -n ")) {
   if (command.includes("provenance-preflight")) {
     state.preflightStarted = true;
     state.nextLaunchState = "COLD";
+    state.activityTopResumed = true;
+    state.processAlive = true;
     writeState(state);
     process.stdout.write([
       "Status: ok", "LaunchState: COLD", "Activity: com.fit.wp002probe/.MainActivity",
@@ -126,10 +151,38 @@ if (joined.startsWith("shell am start -W -n ")) {
     ].join("\n"));
     process.exit(0);
   }
+  if (command.includes("warm-preflight")) {
+    state.activityTopResumed = true;
+    state.nextLaunchState = "UNKNOWN (0)";
+    state.processAlive = true;
+    writeState(state);
+    process.stdout.write([
+      "Status: ok", "LaunchState: WARM", "Activity: com.fit.wp002probe/.MainActivity",
+      "TotalTime: 100", "WaitTime: 101", "Complete", ""
+    ].join("\n"));
+    process.exit(0);
+  }
+  if (state.activityTopResumed && process.env.FAKE_ADB_WARM_ACTIVITY_STUCK === "1") {
+    state.warmLaunchAttemptCount += 1;
+    writeState(state);
+    process.stdout.write([
+      "Status: ok",
+      "LaunchState: UNKNOWN (0)",
+      "Activity: com.fit.wp002probe/.MainActivity",
+      "TotalTime: 0",
+      "WaitTime: 18",
+      "Warning: Activity not started, intent has been delivered to currently running top-most instance.",
+      "Complete",
+      ""
+    ].join("\n"));
+    process.exit(0);
+  }
   const launchState = state.nextLaunchState;
   const measured = launchState === "COLD" || launchState === "WARM";
   const counterKey = launchState === "COLD" ? "coldCount" : "warmCount";
   state[counterKey] += 1;
+  state.activityTopResumed = true;
+  state.processAlive = true;
   writeState(state);
   const totalTime = launchState === "COLD" ? 200 + state.coldCount : 100 + state.warmCount;
   const emptyTotalTime = process.env.FAKE_ADB_EMPTY_TOTAL_TIME === launchState;
@@ -167,8 +220,11 @@ if (joined.startsWith("shell dumpsys activity exit-info ")) {
   process.exit(0);
 }
 if (joined === "shell pidof com.fit.wp002probe") {
-  process.stdout.write("4242\n");
-  process.exit(0);
+  if (state.processAlive !== false) {
+    process.stdout.write("4242\n");
+    process.exit(0);
+  }
+  process.exit(1);
 }
 if (command[0] === "shell" && command[1] === "getprop") {
   const values = {

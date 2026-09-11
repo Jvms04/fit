@@ -43,14 +43,38 @@
           "formalValidation": false
         }
       ],
+      "formalAttempts": [
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-001",
+          "classification": "ABORTED_DIAGNOSTIC",
+          "disposition": "DIAGNOSTIC-ONLY",
+          "formalValidation": false,
+          "characterizationEvidence": false,
+          "rawArtifact": "EXTERNAL-NOT-INGESTED",
+          "rawArtifactName": "sp007-s23-formal-30.json",
+          "rawArtifactSizeBytes": 449421,
+          "rawArtifactSha256": "NOT-PROVIDED",
+          "diagnosticRecord": "raw/SP007_S23_FORMAL_ATTEMPT_001_DIAGNOSTIC.md",
+          "harnessHead": "27b41f66bb44137978cb972a506f3d941f140f3e",
+          "ciArtifactId": 10179821471,
+          "exitCode": 2,
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 0 },
+          "warmBudgetEvaluated": false,
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
+        }
+      ],
       "budgets": {
         "status": "APPROVED-PREREGISTERED",
         "record": "SP007_S23_BUDGETS.json",
         "retrospectiveApplication": false,
         "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
-        "formalRunPreparation": "PREPARED-NOT-EXECUTED",
+        "formalRunPreparation": "CORRECTION-PENDING-HUMAN-GATE",
         "formalRunner": "tests/performance/wp-002/formal-android.mjs",
-        "formalRunStarted": false
+        "formalRunStarted": true,
+        "formalRunResult": "ATTEMPT-001-ABORTED_DIAGNOSTIC",
+        "nextFormalRun": "NOT-AUTHORIZED"
       }
     },
     "iosPhysical": {

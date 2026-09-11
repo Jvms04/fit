@@ -16,6 +16,8 @@ import { classifyNewProcessExits } from "./lib/process-exit.mjs";
 
 const BUDGET_PATH = "docs/evidence/wp-002/SP007_S23_BUDGETS.json";
 const SAMPLE_COUNT = 30;
+const WARM_PRECONDITION_MAX_POLLS = 20;
+const WARM_PRECONDITION_POLL_MS = 250;
 const PACKAGE_NAME = "com.fit.wp002probe";
 const ACTIVITY = `${PACKAGE_NAME}/.MainActivity`;
 const EXPECTED_SCOPE = {
@@ -246,14 +248,31 @@ function waitMilliseconds(milliseconds) {
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, milliseconds);
 }
 
+function inspectTopResumedActivity(raw) {
+  const marker = /(?:mResumedActivity|topResumedActivity|mFocusedApp|mCurrentFocus)\s*[:=]/u;
+  const observedLines = String(raw).split(/\r?\n/u).filter((line) => marker.test(line));
+  return {
+    observable: observedLines.length > 0,
+    probeTopOrResumed: observedLines.some((line) => line.includes(PACKAGE_NAME)),
+    observedLines
+  };
+}
+
 function createState() {
   return {
     phase: "initialization",
-    cold: [], warm: [], commandLog: [],
+    cold: [], warm: [], warmPreconditions: [], commandLog: [],
     preregistration: null,
     artifactVerification: null,
     environment: null,
     runtimeVerification: null,
+    warmPreflight: {
+      counted: false,
+      preparation: "KEYCODE_BACK",
+      precondition: null,
+      launch: null,
+      protocolClassification: "NOT-EXECUTED"
+    },
     crashEvidence: { beforeRaw: "", afterRaw: "", abnormalRecords: [], expectedProtocolRecords: [] },
     acquisitionStarted: false,
     interruption: null
@@ -321,6 +340,7 @@ function buildReport(state) {
     } : null,
     environment: state.environment,
     runtimeVerification: state.runtimeVerification,
+    warmPreflight: state.warmPreflight,
     subject: {
       packageName: PACKAGE_NAME,
       activity: ACTIVITY,
@@ -336,6 +356,7 @@ function buildReport(state) {
     raw: {
       cold: coldEvaluation.records,
       warm: warmEvaluation.records,
+      warmPreconditions: state.warmPreconditions,
       commands: state.commandLog
     },
     crashEvidence: state.crashEvidence,
@@ -406,6 +427,75 @@ function run() {
       throw new ProtocolError("package-scoped process exit evidence unavailable", phase, ["adb", "dumpsys", "activity", "exit-info"], result.exitCode);
     }
     return result.exitCode === 0 ? result.stdout : "";
+  };
+  const prepareWarm = (phasePrefix) => {
+    runAdb(`${phasePrefix}-background`, ["shell", "input", "keyevent", "KEYCODE_BACK"]);
+    const polls = [];
+    for (let attempt = 1; attempt <= WARM_PRECONDITION_MAX_POLLS; attempt += 1) {
+      const activityRaw = runAdb(
+        `${phasePrefix}-precondition-activity-${attempt}`,
+        ["shell", "dumpsys", "activity", "activities", PACKAGE_NAME]
+      );
+      const processResult = adbExecute(["shell", "pidof", PACKAGE_NAME]);
+      const sanitizedProcessStdout = sanitize(processResult.stdout);
+      const sanitizedProcessStderr = sanitize(processResult.stderr);
+      state.commandLog.push({
+        phase: `${phasePrefix}-precondition-pid-${attempt}`,
+        arguments: ["shell", "pidof", PACKAGE_NAME],
+        exitCode: processResult.exitCode,
+        stdout: sanitizedProcessStdout,
+        stderr: sanitizedProcessStderr
+      });
+      if (processResult.exitCode !== 0 && processResult.exitCode !== 1) {
+        throw new ProtocolError(
+          `adb pidof failed (exit ${processResult.exitCode}): ${sanitizedProcessStderr.trim()}`,
+          `${phasePrefix}-precondition-pid`,
+          ["adb", "shell", "pidof", PACKAGE_NAME],
+          processResult.exitCode
+        );
+      }
+      const activity = inspectTopResumedActivity(activityRaw);
+      const processAlive = processResult.exitCode === 0 && /^\d+(?:\s+\d+)*$/u.test(processResult.stdout.trim());
+      const poll = {
+        attempt,
+        activityStateObservable: activity.observable,
+        probeTopOrResumed: activity.probeTopOrResumed,
+        processAlive,
+        activityRaw: sanitize(activityRaw),
+        processRaw: sanitizedProcessStdout,
+        observedTopResumedLines: activity.observedLines
+      };
+      polls.push(poll);
+      if (!processAlive) {
+        return {
+          achieved: false,
+          processAlive: false,
+          activityNotTopOrResumed: !activity.probeTopOrResumed,
+          polls,
+          maxPolls: WARM_PRECONDITION_MAX_POLLS,
+          pollIntervalMs: WARM_PRECONDITION_POLL_MS
+        };
+      }
+      if (activity.observable && !activity.probeTopOrResumed) {
+        return {
+          achieved: true,
+          processAlive: true,
+          activityNotTopOrResumed: true,
+          polls,
+          maxPolls: WARM_PRECONDITION_MAX_POLLS,
+          pollIntervalMs: WARM_PRECONDITION_POLL_MS
+        };
+      }
+      if (attempt < WARM_PRECONDITION_MAX_POLLS) waitMilliseconds(WARM_PRECONDITION_POLL_MS);
+    }
+    return {
+      achieved: false,
+      processAlive: polls.at(-1)?.processAlive ?? false,
+      activityNotTopOrResumed: false,
+      polls,
+      maxPolls: WARM_PRECONDITION_MAX_POLLS,
+      pollIntervalMs: WARM_PRECONDITION_POLL_MS
+    };
   };
 
   try {
@@ -514,6 +604,28 @@ function run() {
       syntheticRowCount: marker.rowCount, readyMsDiagnosticOnly: marker.readyMs ?? null, raw: runtimeRaw
     };
 
+    state.warmPreflight.precondition = prepareWarm("warm-preflight");
+    if (!state.warmPreflight.precondition.achieved) {
+      throw new ProtocolError(
+        "KEYCODE_BACK did not establish a warm precondition with the Activity not top/resumed and the probe process alive",
+        "warm-preflight-precondition"
+      );
+    }
+    const warmPreflightOutput = runAdb("warm-preflight-launch", [
+      "shell", "am", "start", "-W", "-n", ACTIVITY,
+      "--es", "fit_wp002_probe_phase", "warm-preflight"
+    ]);
+    state.warmPreflight.launch = parseAmStartOutput(warmPreflightOutput);
+    state.warmPreflight.protocolClassification = evaluateLaunchAttempts([
+      { sample: 0, launch: state.warmPreflight.launch }
+    ], "WARM").records[0].protocolClassification;
+    if (state.warmPreflight.protocolClassification !== "MEASURED") {
+      throw new ProtocolError(
+        "uncounted warm preflight did not produce WARM / MEASURED",
+        "warm-preflight-launch"
+      );
+    }
+
     runAdb("crash-baseline-force-stop", ["shell", "am", "force-stop", PACKAGE_NAME]);
     state.crashEvidence.beforeRaw = captureExitInfo("crash-baseline");
     state.acquisitionStarted = true;
@@ -526,7 +638,14 @@ function run() {
         sample, launch: parseAmStartOutput(coldOutput),
         totalPssKb: parseTotalPssKb(memoryOutput), memoryRaw: memoryOutput
       });
-      runAdb(`warm-${sample}-background`, ["shell", "input", "keyevent", "KEYCODE_BACK"]);
+      const warmPrecondition = prepareWarm(`warm-${sample}`);
+      state.warmPreconditions.push({ sample, ...warmPrecondition });
+      if (!warmPrecondition.achieved) {
+        throw new ProtocolError(
+          "KEYCODE_BACK did not establish a warm precondition with the Activity not top/resumed and the probe process alive",
+          `warm-${sample}-precondition`
+        );
+      }
       const warmOutput = runAdb(`warm-${sample}-launch`, ["shell", "am", "start", "-W", "-n", ACTIVITY]);
       state.warm.push({ sample, launch: parseAmStartOutput(warmOutput) });
     }

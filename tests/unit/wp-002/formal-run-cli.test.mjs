@@ -235,6 +235,11 @@ test("reads preregistered budgets and preserves exactly 30 measured samples with
     assert.equal(report.artifactVerification.packageMatches, true);
     assert.equal(report.runtimeVerification.syntheticRowCount, 1000);
     assert.equal(report.runtimeVerification.verified, true);
+    assert.equal(report.warmPreflight.counted, false);
+    assert.equal(report.warmPreflight.precondition.achieved, true);
+    assert.equal(report.warmPreflight.protocolClassification, "MEASURED");
+    assert.equal(report.raw.warmPreconditions.length, 30);
+    assert.ok(report.raw.warmPreconditions.every((record) => record.achieved));
   } finally {
     rmSync(fixture.directory, { recursive: true, force: true });
   }
@@ -282,6 +287,71 @@ test("preserves invalid warm samples as diagnostics without using WaitTime or pr
     assert.equal(report.criteria.runnerCriteriaMet, false);
     assert.equal(report.automaticPromotion, false);
     assert.equal(report.canonicalProtocolStatus, "REQUIRES-HUMAN-REVIEW");
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("aborts before warm launch when KEYCODE_BACK leaves the probe top-resumed and Android would only redeliver the intent", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_WARM_ACTIVITY_STUCK: "1" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+    const fixtureState = JSON.parse(readFileSync(fixture.statePath, "utf8"));
+
+    assert.equal(report.runClassification, "ABORTED_DIAGNOSTIC");
+    assert.deepEqual(report.completed, { cold: 0, warm: 0 });
+    assert.equal(report.interruption.phase, "warm-preflight-precondition");
+    assert.equal(report.warmPreflight.precondition.achieved, false);
+    assert.equal(report.warmPreflight.precondition.processAlive, true);
+    assert.ok(report.warmPreflight.precondition.polls.length > 0);
+    assert.match(
+      report.warmPreflight.precondition.polls[0].activityRaw,
+      /topResumedActivity=.*com\.fit\.wp002probe\/\.MainActivity/
+    );
+    assert.equal(fixtureState.warmLaunchAttemptCount, 0);
+    assert.ok(
+      report.raw.commands.every((command) => command.phase !== "warm-preflight-launch"),
+      "am start -W must not run when the warm precondition is false"
+    );
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("preserves acquired cold and warm samples when a later warm precondition times out", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_WARM_ACTIVITY_STUCK_AFTER: "4" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+
+    assert.equal(report.runClassification, "ABORTED_DIAGNOSTIC");
+    assert.deepEqual(report.completed, { cold: 3, warm: 2 });
+    assert.equal(report.raw.cold.length, 3);
+    assert.equal(report.raw.warm.length, 2);
+    assert.equal(report.raw.warmPreconditions.length, 3);
+    assert.equal(report.raw.warmPreconditions[2].achieved, false);
+    assert.equal(report.interruption.phase, "warm-3-precondition");
+    assert.ok(report.raw.commands.every((command) => command.phase !== "warm-3-launch"));
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("aborts warm preflight when KEYCODE_BACK kills the probe process", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_PROCESS_DIES_ON_BACK: "1" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+
+    assert.deepEqual(report.completed, { cold: 0, warm: 0 });
+    assert.equal(report.interruption.phase, "warm-preflight-precondition");
+    assert.equal(report.warmPreflight.precondition.achieved, false);
+    assert.equal(report.warmPreflight.precondition.processAlive, false);
+    assert.ok(report.raw.commands.every((command) => command.phase !== "warm-preflight-launch"));
   } finally {
     rmSync(fixture.directory, { recursive: true, force: true });
   }

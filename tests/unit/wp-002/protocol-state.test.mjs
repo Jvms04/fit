@@ -70,6 +70,49 @@ test("rejects recording the formal S23 run as started during preparation", () =>
   };
 
   assert.ok(
-    validateWp002State(state).some((error) => error.includes("formal S23 run must remain not started"))
+    validateWp002State(state).some((error) => error.includes("started without a recorded formal attempt"))
   );
+});
+
+test("accepts a recorded formal attempt only as aborted diagnostic evidence", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-001-ABORTED_DIAGNOSTIC"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-001",
+    classification: "ABORTED_DIAGNOSTIC",
+    formalValidation: false,
+    characterizationEvidence: false,
+    warmBudgetEvaluated: false,
+    stackFailureEvidence: false,
+    fallbackAuthorized: false
+  }];
+
+  assert.deepEqual(validateWp002State(state), []);
+});
+
+test("rejects treating an invalid warm set as budget, stack-failure, or fallback evidence", () => {
+  const state = structuredClone(baseState);
+  state.platforms.androidPhysical.budgets = {
+    status: "APPROVED-PREREGISTERED",
+    formalRunStarted: true,
+    formalRunResult: "ATTEMPT-001-ABORTED_DIAGNOSTIC"
+  };
+  state.platforms.androidPhysical.formalAttempts = [{
+    id: "SP007-S23-FORMAL-ATTEMPT-001",
+    classification: "ABORTED_DIAGNOSTIC",
+    formalValidation: false,
+    characterizationEvidence: false,
+    warmBudgetEvaluated: true,
+    stackFailureEvidence: true,
+    fallbackAuthorized: true
+  }];
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("warm budget")));
+  assert.ok(errors.some((error) => error.includes("stack failure")));
+  assert.ok(errors.some((error) => error.includes("fallback")));
 });
