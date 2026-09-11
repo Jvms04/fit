@@ -64,3 +64,20 @@ test("classifies UNKNOWN (0) without TotalTime as diagnostic-only and never uses
     }))
   );
 });
+
+test("classifies an empty TotalTime field as invalid rather than MEASURED zero", () => {
+  const launch = parseAmStartOutput([
+    "Status: ok",
+    "LaunchState: COLD",
+    "Activity: com.fit.wp002probe/.MainActivity",
+    "TotalTime:",
+    "WaitTime: 23",
+    "Complete"
+  ].join("\n"));
+
+  const result = metrics.evaluateLaunchAttempts([{ sample: 1, launch }], "COLD");
+
+  assert.equal(launch.totalTimeMs, null);
+  assert.equal(result.measuredCount, 0);
+  assert.equal(result.records[0].protocolClassification, "MISSING_OR_INVALID_TOTAL_TIME");
+});

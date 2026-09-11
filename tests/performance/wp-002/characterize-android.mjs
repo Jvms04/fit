@@ -6,6 +6,7 @@ import process from "node:process";
 
 import { parseAmStartOutput, parseDeviceList, parseTotalPssKb } from "./lib/android-output.mjs";
 import { evaluateLaunchAttempts } from "./lib/metrics.mjs";
+import { portableInvocation } from "./lib/portable-command.mjs";
 
 function readArguments(argv) {
   const values = new Map();
@@ -35,14 +36,16 @@ if (!Number.isInteger(samples) || samples < 3 || samples > 10) {
 }
 
 function runAdb(commandArgs, options = {}) {
-  return execFileSync(adb, ["-s", serial, ...commandArgs], {
+  const invocation = portableInvocation(adb, ["-s", serial, ...commandArgs]);
+  return execFileSync(invocation.executable, invocation.args, {
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
     ...options
   }).trim();
 }
 
-const devicesOutput = execFileSync(adb, ["devices", "-l"], { encoding: "utf8" });
+const devicesInvocation = portableInvocation(adb, ["devices", "-l"]);
+const devicesOutput = execFileSync(devicesInvocation.executable, devicesInvocation.args, { encoding: "utf8" });
 const selected = parseDeviceList(devicesOutput).find((device) => device.serial === serial);
 if (!selected || selected.state !== "device") {
   throw new Error(`selected Android device is not authorized and online (state: ${selected?.state ?? "absent"})`);
@@ -107,7 +110,10 @@ const report = {
     buildFingerprint: getProp("ro.build.fingerprint"),
     wmSize: runAdb(["shell", "wm", "size"]),
     wmDensity: runAdb(["shell", "wm", "density"]),
-    adb: execFileSync(adb, ["version"], { encoding: "utf8" }).trim()
+    adb: (() => {
+      const invocation = portableInvocation(adb, ["version"]);
+      return execFileSync(invocation.executable, invocation.args, { encoding: "utf8" }).trim();
+    })()
   },
   subject: { packageName, activity, samples },
   raw: {

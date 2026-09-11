@@ -54,5 +54,22 @@ test("parses Android activity timing fields as raw milliseconds", () => {
 
 test("parses total PSS from dumpsys meminfo", () => {
   assert.equal(parseTotalPssKb(" TOTAL PSS:   183420   TOTAL RSS: 240000"), 183420);
-  assert.equal(parseTotalPssKb("No process found"), null);
+  for (const output of ["No process found", "TOTAL PSS:", "TOTAL PSS: invalid", "TOTAL PSS: -1", "TOTAL PSS: 1.5"]) {
+    assert.equal(parseTotalPssKb(output), null, output);
+  }
+});
+
+test("never coerces empty or invalid Android timing fields to zero", () => {
+  for (const rawValue of ["", "   ", "not-a-number", "Infinity", "-1"]) {
+    const output = [
+      "Status: ok",
+      "LaunchState: COLD",
+      "Activity: com.fit.wp002probe/.MainActivity",
+      `TotalTime: ${rawValue}`,
+      "WaitTime: 23",
+      "Complete"
+    ].join("\n");
+
+    assert.equal(parseAmStartOutput(output).totalTimeMs, null, `raw value '${rawValue}'`);
+  }
 });

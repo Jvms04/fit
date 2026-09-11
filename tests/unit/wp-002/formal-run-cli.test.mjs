@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync, copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,7 +26,18 @@ function git(directory, args) {
   return execFileSync("git", ["-C", directory, ...args], { encoding: "utf8" }).trim();
 }
 
-function createExecutionRepository({ mutateBudget = false } = {}) {
+function sha256(path) {
+  return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+function createExecutionRepository({
+  mutateBudget = false,
+  sourceIsPreregistration = false,
+  preregistrationIsUnrelated = false,
+  metadataPackage = "com.fit.wp002probe",
+  metadataHead = null,
+  installedApkMismatch = false
+} = {}) {
   const directory = mkdtempSync(join(tmpdir(), "fit-wp002-formal-repo-"));
   const budgetPath = join(directory, budgetRelativePath);
   mkdirSync(dirname(budgetPath), { recursive: true });
@@ -35,7 +49,14 @@ function createExecutionRepository({ mutateBudget = false } = {}) {
   git(directory, ["commit", "-q", "-m", "preregister budgets"]);
   const preregistrationCommit = git(directory, ["rev-parse", "HEAD"]);
 
-  if (mutateBudget) {
+  if (sourceIsPreregistration) {
+    // Intentionally leave HEAD at the preregistration commit.
+  } else if (preregistrationIsUnrelated) {
+    git(directory, ["checkout", "-q", "--orphan", "unrelated"]);
+    writeFileSync(join(directory, "unrelated.txt"), "unrelated source\n");
+    git(directory, ["add", "unrelated.txt"]);
+    git(directory, ["commit", "-q", "-m", "unrelated formal source"]);
+  } else if (mutateBudget) {
     const budget = JSON.parse(execFileSync(process.execPath, [
       "-e",
       `process.stdout.write(JSON.stringify(JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))))`,
@@ -51,21 +72,70 @@ function createExecutionRepository({ mutateBudget = false } = {}) {
     git(directory, ["commit", "-q", "-m", "prepare formal run"]);
   }
 
+  const sourceHead = git(directory, ["rev-parse", "HEAD"]);
+  const artifactDirectory = join(directory, "ci-artifact");
+  mkdirSync(artifactDirectory);
+  const apkPath = join(artifactDirectory, "app-release.apk");
+  const installedApkPath = join(artifactDirectory, "installed-base.apk");
+  const metadataPath = join(artifactDirectory, "APK_PROVENANCE.json");
+  writeFileSync(apkPath, "authorized-release-apk\n");
+  writeFileSync(installedApkPath, installedApkMismatch ? "different-installed-apk\n" : "authorized-release-apk\n");
+  const metadata = {
+    schemaVersion: 1,
+    evidenceType: "WP-002-ANDROID-APK-PROVENANCE",
+    generatedBy: "github-actions",
+    source: {
+      repository: "Jvms04/fit",
+      headSha: metadataHead ?? sourceHead,
+      eventSha: sourceHead,
+      workflow: "WP-002 G0 harness",
+      runId: "34390000000",
+      runAttempt: "1",
+      job: "android-probe-build"
+    },
+    build: {
+      variant: "release",
+      gradleTask: ":app:assembleRelease",
+      architecture: "arm64-v8a",
+      artifactName: "wp-002-android-probe"
+    },
+    apk: {
+      fileName: "app-release.apk",
+      sha256: sha256(apkPath),
+      sizeBytes: readFileSync(apkPath).length,
+      packageName: metadataPackage,
+      versionCode: "1",
+      versionName: "0.0.0",
+      debuggable: false
+    },
+    runtimeContract: {
+      marker: "[FIT_WP002]",
+      expectedSyntheticRowCount: 1000,
+      verification: "required from the installed probe during formal-run preflight"
+    }
+  };
+  writeFileSync(metadataPath, `${JSON.stringify(metadata, null, 2)}\n`);
+
   return {
     directory,
     preregistrationCommit,
-    sourceHead: git(directory, ["rev-parse", "HEAD"]),
-    statePath: join(directory, "fake-adb-state.json")
+    sourceHead,
+    statePath: join(directory, "fake-adb-state.json"),
+    apkPath,
+    installedApkPath,
+    metadataPath
   };
 }
 
 function executeFormal(fixture, extraEnvironment = {}, extraArguments = []) {
   return spawnSync(process.execPath, [
     formalScript,
-    "--adb", fakeAdb,
-    "--serial", "synthetic",
+    "--adb", fixture.adbPath ?? fakeAdb,
+    "--serial", "serial-raw-must-not-appear",
     "--repo-root", fixture.directory,
     "--preregistration-commit", fixture.preregistrationCommit,
+    "--apk", fixture.apkPath,
+    "--apk-metadata", fixture.metadataPath,
     ...extraArguments
   ], {
     encoding: "utf8",
@@ -73,6 +143,7 @@ function executeFormal(fixture, extraEnvironment = {}, extraArguments = []) {
       ...process.env,
       FAKE_ADB_STATE: fixture.statePath,
       FAKE_ADB_PSS_KB: "118000",
+      FAKE_ADB_INSTALLED_APK: fixture.installedApkPath,
       ...extraEnvironment
     }
   });
@@ -156,6 +227,14 @@ test("reads preregistered budgets and preserves exactly 30 measured samples with
     assert.equal(report.criteria.observedCrashes, 0);
     assert.equal(report.criteria.allowedCrashes, 0);
     assert.equal(report.criteria.runnerCriteriaMet, true);
+    assert.equal(report.artifactVerification.checkoutHeadMatchesCi, true);
+    assert.equal(report.artifactVerification.localApkMatchesCi, true);
+    assert.equal(report.artifactVerification.installedApkMatchesCi, true);
+    assert.equal(report.artifactVerification.installedApkSha256, report.artifactVerification.apk.sha256);
+    assert.equal(report.artifactVerification.installedApkSizeBytes, report.artifactVerification.apk.sizeBytes);
+    assert.equal(report.artifactVerification.packageMatches, true);
+    assert.equal(report.runtimeVerification.syntheticRowCount, 1000);
+    assert.equal(report.runtimeVerification.verified, true);
   } finally {
     rmSync(fixture.directory, { recursive: true, force: true });
   }
@@ -167,7 +246,9 @@ test("rejects a budget file changed after its preregistration commit before cont
     const formal = executeFormal(fixture);
     assert.notEqual(formal.status, 0);
     assert.match(formal.stderr, /budget file changed after preregistration/);
-    assert.equal(formal.stdout, "");
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.runClassification, "ABORTED_DIAGNOSTIC");
+    assert.deepEqual(report.completed, { cold: 0, warm: 0 });
     assert.equal(existsSync(fixture.statePath), false, "budget drift must abort before ADB contact");
   } finally {
     rmSync(fixture.directory, { recursive: true, force: true });
@@ -218,6 +299,224 @@ test("keeps a valid over-budget measurement as reviewable failure evidence", () 
     assert.equal(report.criteria.runnerCriteriaMet, false);
     assert.equal(report.runClassification, "FORMAL_RUN_EVIDENCE_CANDIDATE");
     assert.equal(report.canonicalProtocolStatus, "REQUIRES-HUMAN-REVIEW");
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects a source head equal to the preregistration commit before ADB", () => {
+  const fixture = createExecutionRepository({ sourceIsPreregistration: true });
+  try {
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /source committed after budget preregistration/);
+    assert.equal(existsSync(fixture.statePath), false);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects a preregistration commit that is not an ancestor", () => {
+  const fixture = createExecutionRepository({ preregistrationIsUnrelated: true });
+  try {
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /not an ancestor/);
+    assert.equal(existsSync(fixture.statePath), false);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects a local APK whose hash diverges from CI metadata", () => {
+  const fixture = createExecutionRepository();
+  try {
+    writeFileSync(fixture.apkPath, "tampered-local-apk\n");
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /local APK.*CI metadata/i);
+    assert.equal(JSON.parse(formal.stdout).completed.cold, 0);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects CI metadata issued for a different repository head", () => {
+  const fixture = createExecutionRepository({ metadataHead: "a".repeat(40) });
+  try {
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /checkout head does not match the CI artifact source head/);
+    assert.equal(existsSync(fixture.statePath), false);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects an installed APK whose bytes diverge from the authorized APK", () => {
+  const fixture = createExecutionRepository({ installedApkMismatch: true });
+  try {
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /installed APK.*authorized APK/i);
+    assert.equal(JSON.parse(formal.stdout).completed.cold, 0);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects package divergence in CI APK metadata", () => {
+  const fixture = createExecutionRepository({ metadataPackage: "com.other.application" });
+  try {
+    const formal = executeFormal(fixture);
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /package.*CI metadata/i);
+    assert.equal(existsSync(fixture.statePath), false);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects when the expected probe package is not installed", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_INSTALLED_PACKAGE: "com.other.application" });
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /installed-package-path/);
+    assert.equal(JSON.parse(formal.stdout).completed.cold, 0);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects a device or OS outside the preregistered S23 line", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_MODEL: "SM-S921B" });
+    assert.notEqual(formal.status, 0);
+    assert.match(formal.stdout, /scoped only to SM-S911B/);
+    assert.equal(JSON.parse(formal.stdout).completed.cold, 0);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("rejects an installed runtime that does not prove the 1000-row dataset", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_RUNTIME_ROW_COUNT: "999" });
+    assert.notEqual(formal.status, 0);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.completed.cold, 0);
+    assert.equal(report.runtimeVerification, null);
+    assert.equal(report.subject.dataset, "UNVERIFIED");
+    assert.match(report.interruption.reason, /1000-row runtime contract/);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("fails zero-crash when ApplicationExitInfo attributes a Java crash to the probe", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_PROBE_EXIT_REASON: "4", FAKE_ADB_PROBE_EXIT_LABEL: "crash" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.criteria.observedCrashes, 1);
+    assert.equal(report.criteria.runnerCriteriaMet, false);
+    assert.equal(report.crashEvidence.abnormalRecords[0].category, "JAVA_CRASH");
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("does not let another application's crash contaminate the probe result", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_OTHER_APP_CRASH: "1", FAKE_ADB_OTHER_APP_EXIT: "1" });
+    assert.equal(formal.status, 0, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.criteria.observedCrashes, 0);
+    assert.equal(report.criteria.runnerCriteriaMet, true);
+    assert.ok(report.crashEvidence.afterRaw.includes("com.other.application"));
+    assert.ok(report.crashEvidence.abnormalRecords.every((record) => record.process === "com.fit.wp002probe"));
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("preserves missing or invalid cold TOTAL PSS as an invalid diagnostic", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_PSS_KB: "not-a-number" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.raw.cold[0].totalPssKb, null);
+    assert.equal(report.raw.cold[0].pssClassification, "MISSING_OR_INVALID_TOTAL_PSS");
+    assert.equal(report.summaries.coldTotalPss, null);
+    assert.equal(report.criteria.coldSamplesValid, false);
+    assert.equal(report.runClassification, "ABORTED_DIAGNOSTIC");
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("emits partial diagnostic JSON when ADB fails after acquired samples", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_FAIL_AFTER_PAIRS: "2" });
+    assert.notEqual(formal.status, 0);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.runClassification, "ABORTED_DIAGNOSTIC");
+    assert.equal(report.formalValidation, false);
+    assert.equal(report.automaticPromotion, false);
+    assert.deepEqual(report.completed, { cold: 2, warm: 2 });
+    assert.equal(report.raw.cold.length, 2);
+    assert.equal(report.raw.warm.length, 2);
+    assert.equal(report.raw.cold[0].totalPssKb, 118000);
+    assert.match(report.interruption.phase, /cold-3-force-stop/);
+    assert.match(report.interruption.reason, /synthetic transport failure/);
+    assert.ok(report.crashEvidence.afterRaw !== undefined);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("never measures an empty TotalTime as zero", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture, { FAKE_ADB_EMPTY_TOTAL_TIME: "WARM" });
+    assert.equal(formal.status, 2, formal.stderr);
+    const report = JSON.parse(formal.stdout);
+    assert.equal(report.raw.warm[0].launch.totalTimeMs, null);
+    assert.equal(report.raw.warm[0].protocolClassification, "MISSING_OR_INVALID_TOTAL_TIME");
+    assert.equal(report.summaries.warmTotalTime, null);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("redacts the selected and unrelated raw device serials from final evidence", () => {
+  const fixture = createExecutionRepository();
+  try {
+    const formal = executeFormal(fixture);
+    assert.equal(formal.status, 0, formal.stderr);
+    assert.doesNotMatch(formal.stdout, /serial-raw-must-not-appear|other-secret-serial/);
+    assert.match(formal.stdout, /serialRef/);
+  } finally {
+    rmSync(fixture.directory, { recursive: true, force: true });
+  }
+});
+
+test("runs the non-executable fake ADB portably through Node", () => {
+  const fixture = createExecutionRepository();
+  const portableFake = join(fixture.directory, "portable-fake-adb.mjs");
+  copyFileSync(fakeAdb, portableFake);
+  chmodSync(portableFake, 0o644);
+  fixture.adbPath = portableFake;
+  try {
+    const formal = executeFormal(fixture);
+    assert.equal(formal.status, 0, formal.stderr);
   } finally {
     rmSync(fixture.directory, { recursive: true, force: true });
   }

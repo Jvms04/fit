@@ -38,7 +38,14 @@ export function parseAmStartOutput(output) {
       .map((match) => [match[1], match[2]])
   );
 
-  const milliseconds = (key) => fields[key] === undefined ? null : Number(fields[key]);
+  const milliseconds = (key) => {
+    const rawValue = fields[key];
+    if (rawValue === undefined || rawValue.trim() === "") {
+      return null;
+    }
+    const value = Number(rawValue);
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  };
 
   return {
     status: fields.Status ?? null,
@@ -53,6 +60,10 @@ export function parseAmStartOutput(output) {
 }
 
 export function parseTotalPssKb(output) {
-  const match = output.match(/TOTAL PSS:\s*(\d+)/);
-  return match ? Number(match[1]) : null;
+  const match = output.match(/TOTAL PSS:\s*(\S+)/u);
+  if (!match || !/^\d+$/u.test(match[1])) {
+    return null;
+  }
+  const value = Number(match[1]);
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
 }

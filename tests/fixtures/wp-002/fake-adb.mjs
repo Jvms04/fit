@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, writeFileSync } from "node:fs";
 import process from "node:process";
 
 const statePath = process.env.FAKE_ADB_STATE;
@@ -13,7 +13,10 @@ function readState() {
     return JSON.parse(readFileSync(statePath, "utf8"));
   } catch (error) {
     if (error.code === "ENOENT") {
-      return { nextLaunchState: "UNKNOWN (0)", coldCount: 0, warmCount: 0 };
+      return {
+        nextLaunchState: "UNKNOWN (0)", coldCount: 0, warmCount: 0,
+        forceStopCount: 0, preflightStarted: false, exitRecords: []
+      };
     }
     throw error;
   }
@@ -23,9 +26,27 @@ function writeState(state) {
   writeFileSync(statePath, JSON.stringify(state));
 }
 
+function exitRecord({ index, reason, label, processName = "com.fit.wp002probe", status = 0 }) {
+  return [
+    `ApplicationExitInfo #${index}:`,
+    `  timestamp=2026-09-10 10:${String(index).padStart(2, "0")}:00.000`,
+    `  pid=${5000 + index}`,
+    `  process=${processName}`,
+    `  reason=${reason} (${label})`,
+    `  status=${status}`,
+    `  description=${label}`
+  ].join("\n");
+}
+
 const args = process.argv.slice(2);
 if (args.join(" ") === "devices -l") {
-  process.stdout.write("List of devices attached\nsynthetic device product:dm3q model:SM_S911B device:dm3q transport_id:1\n");
+  process.stdout.write([
+    "List of devices attached",
+    "synthetic device product:dm3q model:SM_S911B device:dm3q transport_id:1",
+    "serial-raw-must-not-appear device product:dm3q model:SM_S911B device:dm3q transport_id:3",
+    "other-secret-serial device product:other model:OTHER device:other transport_id:2",
+    ""
+  ].join("\n"));
   process.exit(0);
 }
 if (args[0] === "version") {
@@ -35,23 +56,58 @@ if (args[0] === "version") {
 
 const command = args.slice(2);
 const state = readState();
+const joined = command.join(" ");
 
+if (command[0] === "pull") {
+  const installedApk = process.env.FAKE_ADB_INSTALLED_APK;
+  if (!installedApk) {
+    process.stderr.write("FAKE_ADB_INSTALLED_APK is required for pull\n");
+    process.exit(2);
+  }
+  copyFileSync(installedApk, command[2]);
+  process.stdout.write("1 file pulled\n");
+  process.exit(0);
+}
 if (command[0] === "logcat") {
-  if (command[1] === "-d") {
-    process.stdout.write("0.0 ReactNativeJS: I [FIT_WP002] synthetic-marker\n");
+  if (command.includes("-d")) {
+    if (process.env.FAKE_ADB_OTHER_APP_CRASH === "1") {
+      process.stdout.write("FATAL EXCEPTION: main Process: com.other.application\n");
+    }
+    if (state.preflightStarted) {
+      const rowCount = Number(process.env.FAKE_ADB_RUNTIME_ROW_COUNT ?? "1000");
+      process.stdout.write(
+        "09-10 ReactNativeJS: I [FIT_WP002] " +
+        JSON.stringify({
+          status: "ready", sqliteVersion: "3.49.1", cipherVersion: "4.7.0 community",
+          rowCount, readyMs: 55
+        }) + "\n"
+      );
+    }
   }
   process.exit(0);
 }
-if (command.join(" ").startsWith("shell pm path ")) {
+if (joined.startsWith("shell pm path ")) {
+  const requestedPackage = command.at(-1);
+  if (requestedPackage !== (process.env.FAKE_ADB_INSTALLED_PACKAGE ?? "com.fit.wp002probe")) {
+    process.stderr.write(`package ${requestedPackage} was not found\n`);
+    process.exit(1);
+  }
   process.stdout.write("package:/data/app/com.fit.wp002probe/base.apk\n");
   process.exit(0);
 }
-if (command.join(" ").startsWith("shell am force-stop ")) {
+if (joined.startsWith("shell am force-stop ")) {
+  const failAfterPairs = Number(process.env.FAKE_ADB_FAIL_AFTER_PAIRS ?? "-1");
+  if (Number.isInteger(failAfterPairs) && failAfterPairs >= 0 && state.coldCount >= failAfterPairs) {
+    process.stderr.write("synthetic transport failure after acquired pairs\n");
+    process.exit(2);
+  }
+  state.forceStopCount += 1;
   state.nextLaunchState = "COLD";
+  state.exitRecords.unshift({ reason: 10, label: "user request", status: 0 });
   writeState(state);
   process.exit(0);
 }
-if (command.join(" ").startsWith("shell input keyevent ")) {
+if (joined.startsWith("shell input keyevent ")) {
   const keycode = command.at(-1);
   state.nextLaunchState = process.env.FAKE_ADB_FORCE_UNKNOWN === "1"
     ? "UNKNOWN (0)"
@@ -59,48 +115,78 @@ if (command.join(" ").startsWith("shell input keyevent ")) {
   writeState(state);
   process.exit(0);
 }
-if (command.join(" ").startsWith("shell am start -W -n ")) {
+if (joined.startsWith("shell am start -W -n ")) {
+  if (command.includes("provenance-preflight")) {
+    state.preflightStarted = true;
+    state.nextLaunchState = "COLD";
+    writeState(state);
+    process.stdout.write([
+      "Status: ok", "LaunchState: COLD", "Activity: com.fit.wp002probe/.MainActivity",
+      "TotalTime: 210", "WaitTime: 211", "Complete", ""
+    ].join("\n"));
+    process.exit(0);
+  }
   const launchState = state.nextLaunchState;
   const measured = launchState === "COLD" || launchState === "WARM";
   const counterKey = launchState === "COLD" ? "coldCount" : "warmCount";
   state[counterKey] += 1;
   writeState(state);
-  const totalTime = launchState === "COLD"
-    ? 200 + state.coldCount
-    : 100 + state.warmCount;
+  const totalTime = launchState === "COLD" ? 200 + state.coldCount : 100 + state.warmCount;
+  const emptyTotalTime = process.env.FAKE_ADB_EMPTY_TOTAL_TIME === launchState;
   const lines = [
-    "Status: ok",
-    `LaunchState: ${launchState}`,
+    "Status: ok", `LaunchState: ${launchState}`,
     "Activity: com.fit.wp002probe/.MainActivity",
-    ...(measured ? [`TotalTime: ${totalTime}`] : []),
-    `WaitTime: ${totalTime + 1}`,
-    "Complete"
+    ...(measured ? [`TotalTime: ${emptyTotalTime ? "" : totalTime}`] : []),
+    `WaitTime: ${totalTime + 1}`, "Complete"
   ];
   process.stdout.write(`${lines.join("\n")}\n`);
   process.exit(0);
 }
-if (command.join(" ").startsWith("shell dumpsys meminfo ")) {
+if (joined.startsWith("shell dumpsys meminfo ")) {
   const totalPssKb = process.env.FAKE_ADB_PSS_KB ?? "183420";
   process.stdout.write(` TOTAL PSS: ${totalPssKb} TOTAL RSS: 240000\n`);
   process.exit(0);
 }
+if (joined.startsWith("shell dumpsys activity exit-info ")) {
+  const records = [...state.exitRecords];
+  if (state.coldCount > 0 && process.env.FAKE_ADB_PROBE_EXIT_REASON) {
+    records.unshift({
+      reason: Number(process.env.FAKE_ADB_PROBE_EXIT_REASON),
+      label: process.env.FAKE_ADB_PROBE_EXIT_LABEL ?? "injected abnormal exit",
+      status: Number(process.env.FAKE_ADB_PROBE_EXIT_STATUS ?? "0")
+    });
+  }
+  if (process.env.FAKE_ADB_OTHER_APP_EXIT === "1") {
+    process.stdout.write(`${exitRecord({
+      index: records.length + 1, reason: 4, label: "other app crash",
+      processName: "com.other.application"
+    })}\n`);
+  }
+  process.stdout.write(records.map((record, index) => exitRecord({ index, ...record })).join("\n"));
+  if (records.length > 0) process.stdout.write("\n");
+  process.exit(0);
+}
+if (joined === "shell pidof com.fit.wp002probe") {
+  process.stdout.write("4242\n");
+  process.exit(0);
+}
 if (command[0] === "shell" && command[1] === "getprop") {
   const values = {
-    "ro.product.manufacturer": "samsung",
-    "ro.product.model": "SM-S911B",
-    "ro.product.device": "dm3q",
-    "ro.build.version.release": "16",
-    "ro.build.version.sdk": "36",
+    "ro.product.manufacturer": process.env.FAKE_ADB_MANUFACTURER ?? "samsung",
+    "ro.product.model": process.env.FAKE_ADB_MODEL ?? "SM-S911B",
+    "ro.product.device": process.env.FAKE_ADB_DEVICE ?? "dm3q",
+    "ro.build.version.release": process.env.FAKE_ADB_ANDROID_RELEASE ?? "16",
+    "ro.build.version.sdk": process.env.FAKE_ADB_API_LEVEL ?? "36",
     "ro.build.fingerprint": "synthetic/fingerprint"
   };
   process.stdout.write(`${values[command[2]] ?? ""}\n`);
   process.exit(0);
 }
-if (command.join(" ") === "shell wm size") {
+if (joined === "shell wm size") {
   process.stdout.write("Physical size: 1080x2340\n");
   process.exit(0);
 }
-if (command.join(" ") === "shell wm density") {
+if (joined === "shell wm density") {
   process.stdout.write("Physical density: 420\n");
   process.exit(0);
 }

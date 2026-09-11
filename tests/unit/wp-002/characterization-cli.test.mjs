@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { chmodSync, copyFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -97,6 +97,31 @@ test("preserves UNKNOWN (0) raw output and exits diagnostic-only without fabrica
         waitTimeMs
       }))
     );
+  } finally {
+    rmSync(temporaryDirectory, { recursive: true, force: true });
+  }
+});
+
+test("invokes a JavaScript fake ADB through Node without requiring an executable file", () => {
+  const temporaryDirectory = mkdtempSync(join(tmpdir(), "fit-wp002-adb-portable-"));
+  const statePath = join(temporaryDirectory, "state.json");
+  const portableFakeAdb = join(temporaryDirectory, "fake-adb.mjs");
+  copyFileSync(fakeAdb, portableFakeAdb);
+  chmodSync(portableFakeAdb, 0o644);
+
+  try {
+    const result = spawnSync(process.execPath, [
+      script,
+      "--adb", portableFakeAdb,
+      "--serial", "synthetic",
+      "--samples", "3"
+    ], {
+      encoding: "utf8",
+      env: { ...process.env, FAKE_ADB_STATE: statePath }
+    });
+
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(JSON.parse(result.stdout).subject.samples, 3);
   } finally {
     rmSync(temporaryDirectory, { recursive: true, force: true });
   }
