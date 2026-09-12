@@ -12,6 +12,7 @@ const EXPECTED_CORPUS_SHA256 =
   "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141";
 const EXPECTED_RULE_BASE_SIZE = 715_527;
 const EXPECTED_CORPUS_SIZE = 2_060;
+const HERMES_BYTECODE_MAGIC = Buffer.from("c61fbc03c103191f", "hex");
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -123,8 +124,21 @@ export async function createHermesAndroidProvenance({
   requireCondition(appConfig?.expo?.jsEngine === "hermes", "app configuration does not select Hermes");
 
   const entries = readZipEntries(apkBytes);
-  const hermesLibrary = entries.find(({ name }) => name === "lib/arm64-v8a/libhermes.so");
-  requireCondition(hermesLibrary, "Hermes arm64 native library is absent from APK");
+  const androidBundle = entries.find(({ name }) => name === "assets/index.android.bundle");
+  requireCondition(androidBundle, "Android bundle is absent from APK");
+  const androidBundleBytes = entryBytes(apkBytes, androidBundle);
+  requireCondition(
+    androidBundleBytes.subarray(0, HERMES_BYTECODE_MAGIC.length).equals(HERMES_BYTECODE_MAGIC),
+    "Android bundle is not Hermes bytecode"
+  );
+  const arm64RuntimeLibrary = entries.find(({ name }) =>
+    [
+      "lib/arm64-v8a/libreactnative.so",
+      "lib/arm64-v8a/libhermes.so",
+      "lib/arm64-v8a/libhermesvm.so"
+    ].includes(name)
+  );
+  requireCondition(arm64RuntimeLibrary, "arm64 React Native runtime library is absent from APK");
   const ruleBaseAsset = findHashedEntry(apkBytes, entries, {
     expectedHash: EXPECTED_RULE_BASE_SHA256,
     expectedSize: EXPECTED_RULE_BASE_SIZE,
@@ -161,8 +175,10 @@ export async function createHermesAndroidProvenance({
     },
     engine: {
       configured: "hermes",
-      arm64NativeLibraryPresent: true,
-      nativeLibraryEntry: hermesLibrary.name,
+      androidBundleFormat: "HERMES_BYTECODE",
+      bytecodeMagicHex: HERMES_BYTECODE_MAGIC.toString("hex"),
+      bundleEntry: androidBundle.name,
+      arm64RuntimeLibraryEntry: arm64RuntimeLibrary.name,
       runtimeProof: "PENDING_PHYSICAL_EXECUTION"
     },
     ruleBase: {

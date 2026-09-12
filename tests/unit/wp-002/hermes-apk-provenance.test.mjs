@@ -16,6 +16,7 @@ const RULE_BASE_SHA256 =
   "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81";
 const CORPUS_SHA256 =
   "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141";
+const HERMES_BYTECODE_MAGIC = Buffer.from("c61fbc03c103191f", "hex");
 
 function storedZip(entries) {
   const localParts = [];
@@ -83,7 +84,8 @@ test("APK provenance binds the same head/APK to Hermes and exact VAL-006 assets"
       fileURLToPath(new URL("../../temporal/wp-002/fixtures/node24-vectors.json", import.meta.url))
     );
     const apk = storedZip([
-      ["lib/arm64-v8a/libhermes.so", "hermes-native-library"],
+      ["lib/arm64-v8a/libreactnative.so", "merged-react-native-runtime"],
+      ["assets/index.android.bundle", Buffer.concat([HERMES_BYTECODE_MAGIC, Buffer.from("bytecode")])],
       ["assets/val006/iana-2026c.tzdb", ruleBase, 8],
       ["assets/val006/node24-vectors.corpus", corpus, 8]
     ]);
@@ -124,7 +126,10 @@ test("APK provenance binds the same head/APK to Hermes and exact VAL-006 assets"
     assert.equal(report.apk.sha256, apkSha256);
     assert.equal(report.apk.packageName, "com.fit.wp002probe");
     assert.equal(report.engine.configured, "hermes");
-    assert.equal(report.engine.arm64NativeLibraryPresent, true);
+    assert.equal(report.engine.androidBundleFormat, "HERMES_BYTECODE");
+    assert.equal(report.engine.bytecodeMagicHex, HERMES_BYTECODE_MAGIC.toString("hex"));
+    assert.equal(report.engine.bundleEntry, "assets/index.android.bundle");
+    assert.equal(report.engine.arm64RuntimeLibraryEntry, "lib/arm64-v8a/libreactnative.so");
     assert.equal(report.engine.runtimeProof, "PENDING_PHYSICAL_EXECUTION");
     assert.deepEqual(report.ruleBase, {
       tzdbVersion: "2026c",
@@ -160,11 +165,13 @@ test("APK provenance binds the same head/APK to Hermes and exact VAL-006 assets"
   }
 });
 
-test("provenance refuses an APK without Hermes or with divergent embedded bytes", async () => {
+test("provenance refuses an APK configured for Hermes without Hermes bytecode", async () => {
   assert.equal(typeof implementation.createHermesAndroidProvenance, "function");
   const directory = mkdtempSync(join(tmpdir(), "fit-val006-hermes-negative-"));
   try {
     const apk = storedZip([
+      ["lib/arm64-v8a/libreactnative.so", "merged-react-native-runtime"],
+      ["assets/index.android.bundle", "plain-javascript-is-not-hermes-bytecode"],
       ["assets/val006/iana-2026c.tzdb", "wrong-rule-base"],
       ["assets/val006/node24-vectors.corpus", "wrong-corpus"]
     ]);
@@ -187,7 +194,39 @@ test("provenance refuses an APK without Hermes or with divergent embedded bytes"
           }
         }
       }),
-      /Hermes arm64 native library is absent/
+      /Android bundle is not Hermes bytecode/
+    );
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("provenance refuses Hermes bytecode without an arm64 runtime library", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "fit-val006-hermes-native-negative-"));
+  try {
+    const apk = storedZip([
+      ["assets/index.android.bundle", Buffer.concat([HERMES_BYTECODE_MAGIC, Buffer.from("bytecode")])]
+    ]);
+    const apkPath = join(directory, "app-release.apk");
+    const apkSha256 = createHash("sha256").update(apk).digest("hex");
+    writeFileSync(apkPath, apk);
+    await assert.rejects(
+      implementation.createHermesAndroidProvenance({
+        apkPath,
+        expectedHeadSha: "a".repeat(40),
+        appConfig: { expo: { jsEngine: "hermes", android: { package: "com.fit.wp002probe" } } },
+        apkMetadata: {
+          source: { headSha: "a".repeat(40) },
+          build: { variant: "release", architecture: "arm64-v8a" },
+          apk: {
+            sha256: apkSha256,
+            sizeBytes: apk.length,
+            packageName: "com.fit.wp002probe",
+            debuggable: false
+          }
+        }
+      }),
+      /arm64 React Native runtime library is absent/
     );
   } finally {
     rmSync(directory, { recursive: true, force: true });
