@@ -8,6 +8,7 @@ const repositoryRoot = fileURLToPath(new URL("../../../", import.meta.url));
 test("Git checkout preserves exact bytes for every hashed VAL-006 artifact", () => {
   const paths = [
     "tests/temporal/wp-002/fixtures/synthetic-future-revision.json",
+    "tests/temporal/wp-002/fixtures/node24-vectors.json",
     "docs/evidence/wp-002/raw/VAL006_NODE24_PARTIAL.json"
   ];
   const result = spawnSync("git", ["check-attr", "text", "--", ...paths], {
