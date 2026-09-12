@@ -2,10 +2,12 @@
 
 import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const RULE_BASE_URL = new URL("../node_modules/moment-timezone/data/packed/latest.json", import.meta.url);
+const require = createRequire(import.meta.url);
+const RULE_BASE_PATH = require.resolve("moment-timezone/data/packed/latest.json");
 const CORPUS_URL = new URL(
   "../../../temporal/wp-002/fixtures/node24-vectors.json",
   import.meta.url
@@ -25,7 +27,7 @@ export async function prepareHermesAssets(
   outputDirectory = fileURLToPath(DEFAULT_OUTPUT_URL)
 ) {
   const [ruleBaseBytes, corpusBytes] = await Promise.all([
-    readFile(RULE_BASE_URL),
+    readFile(RULE_BASE_PATH),
     readFile(CORPUS_URL)
   ]);
   const ruleBaseSha256 = sha256(ruleBaseBytes);
