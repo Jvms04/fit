@@ -5,6 +5,8 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, StyleSheet, Text, View } from "react-native";
 
+import { runHermesAndroidVal006Probe } from "./val006/run-hermes-android";
+
 const PROBE_KEY_REF = "wp002.sqlcipher.key";
 const SYNTHETIC_ROW_COUNT = 1_000;
 const startedAt = globalThis.performance.now();
@@ -101,6 +103,26 @@ export default function App() {
         };
         setResult(nextResult);
         console.error(`[FIT_WP002] ${JSON.stringify(nextResult)}`);
+      });
+
+    runHermesAndroidVal006Probe()
+      .then((temporalReport) => {
+        console.info(`[FIT_WP002_VAL006_HERMES] ${JSON.stringify(temporalReport)}`);
+      })
+      .catch((error: unknown) => {
+        console.error(
+          `[FIT_WP002_VAL006_HERMES] ${JSON.stringify({
+            schemaVersion: 1,
+            wp: "WP-002",
+            validation: "VAL-006",
+            classification: "VAL006_HERMES_ANDROID_DIAGNOSTIC_INVALID",
+            error: error instanceof Error ? error.message : "unknown temporal probe error",
+            comparable: false,
+            canonicalPromotion: false,
+            automaticPromotion: false,
+            fallbackActivated: false
+          })}`
+        );
       });
   }, []);
 

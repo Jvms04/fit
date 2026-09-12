@@ -95,6 +95,50 @@ export function validateWp002State(state) {
     errors.push("VAL-006 Node evidence requires the protocol state to be PARTIAL");
   }
 
+  const temporalHermesAndroidPreparation = state?.temporalHermesAndroidPreparation;
+  if (temporalHermesAndroidPreparation) {
+    const expectedRuleBaseSha =
+      "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81";
+    const expectedCorpusSha =
+      "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141";
+    const expectedRuleBaseId =
+      `iana-2026c+moment-timezone-0.6.3+sha256:${expectedRuleBaseSha}`;
+    if (temporalHermesAndroidPreparation.status !== "PREPARED-AWAITING-HUMAN-GATE") {
+      errors.push("Hermes Android preparation status must remain PREPARED-AWAITING-HUMAN-GATE");
+    }
+    if (
+      temporalHermesAndroidPreparation.runtimeExecution !== "NOT-EXECUTED" ||
+      temporalHermesAndroidPreparation.runtimeProof !== "PENDING_PHYSICAL_EXECUTION" ||
+      temporalHermesAndroidPreparation.vectors?.executed !== 0
+    ) {
+      errors.push("Hermes Android preparation cannot claim runtime execution before the physical gate");
+    }
+    if (
+      temporalHermesAndroidPreparation.ruleBaseId !== expectedRuleBaseId ||
+      temporalHermesAndroidPreparation.ruleBaseSha256 !== expectedRuleBaseSha
+    ) {
+      errors.push("Hermes Android preparation must preserve the exact Node rule-base ID and hash");
+    }
+    if (
+      temporalHermesAndroidPreparation.corpusSha256 !== expectedCorpusSha ||
+      temporalHermesAndroidPreparation.vectors?.prepared !== 5
+    ) {
+      errors.push("Hermes Android preparation must preserve the exact five-vector Node corpus hash");
+    }
+    if (temporalHermesAndroidPreparation.osTzdbDivergence !== "NOT-EXECUTED") {
+      errors.push("Hermes Android preparation must keep the separate OS-TZDB scenario NOT-EXECUTED");
+    }
+    if (temporalHermesAndroidPreparation.ios !== "BLOCKED") {
+      errors.push("Hermes Android preparation must keep Hermes iOS BLOCKED");
+    }
+    if (temporalHermesAndroidPreparation.canonicalPromotion !== false) {
+      errors.push("Hermes Android preparation cannot claim canonical promotion");
+    }
+    if (temporalHermesAndroidPreparation.fallbackActivated !== false) {
+      errors.push("Hermes Android preparation cannot activate fallback");
+    }
+  }
+
   const diagnosticAttempts = state?.platforms?.androidPhysical?.diagnosticAttempts ?? [];
   if (diagnosticAttempts.some((attempt) =>
     attempt.classification === "ABORTED-DIAGNOSTIC" && attempt.characterizationEvidence !== false

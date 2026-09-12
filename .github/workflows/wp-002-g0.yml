@@ -83,6 +83,9 @@ jobs:
       - name: Install locked disposable harness
         working-directory: tests/native/wp-002-mobile-harness
         run: npm ci --ignore-scripts
+      - name: Materialize verified VAL-006 Hermes assets
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run prepare:val006-hermes
       - name: Generate disposable Android project
         working-directory: tests/native/wp-002-mobile-harness
         run: EXPO_OFFLINE=1 ./node_modules/.bin/expo prebuild --platform android --clean --no-install
@@ -106,9 +109,18 @@ jobs:
             --apk "$APK_PATH" \
             --apkanalyzer "$APKANALYZER_BIN" \
             --output "$OUTPUT_DIR/APK_PROVENANCE.json"
+          node tests/temporal/wp-002/create-hermes-android-provenance.mjs \
+            --apk "$APK_PATH" \
+            --apk-metadata "$OUTPUT_DIR/APK_PROVENANCE.json" \
+            --app-config "tests/native/wp-002-mobile-harness/app.json" \
+            --output "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json"
           (
             cd "$OUTPUT_DIR"
-            sha256sum app-release.apk APK_PROVENANCE.json > APK_PROVENANCE.sha256
+            sha256sum \
+              app-release.apk \
+              APK_PROVENANCE.json \
+              HERMES_ANDROID_PROVENANCE.json \
+              > APK_PROVENANCE.sha256
           )
           {
             echo "### WP-002 authorized APK"
@@ -118,6 +130,10 @@ jobs:
             echo "- Metadata SHA-256: \`$(sha256sum "$OUTPUT_DIR/APK_PROVENANCE.json" | cut -d' ' -f1)\`"
             echo "- Package: \`$(jq -r '.apk.packageName' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
             echo "- Variant/debuggable: \`$(jq -r '.build.variant' "$OUTPUT_DIR/APK_PROVENANCE.json") / $(jq -r '.apk.debuggable' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
+            echo "- Hermes arm64 library in APK: \`$(jq -r '.engine.arm64NativeLibraryPresent' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Embedded TZDB/version: \`$(jq -r '.ruleBase.sha256' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json") / $(jq -r '.ruleBase.tzdbVersion' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Embedded corpus SHA-256/vectors: \`$(jq -r '.corpus.sha256' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json") / $(jq -r '.corpus.vectorCount' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Hermes runtime proof: \`$(jq -r '.engine.runtimeProof' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
           } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload disposable probe APK and provenance
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -126,6 +142,7 @@ jobs:
           path: |
             tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/app-release.apk
             tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/APK_PROVENANCE.json
+            tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/HERMES_ANDROID_PROVENANCE.json
             tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/APK_PROVENANCE.sha256
           if-no-files-found: error
           retention-days: 3

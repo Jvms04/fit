@@ -4,6 +4,13 @@ This directory is a G0 validation probe for Expo SDK 57 / React Native 0.86.3. I
 
 The screen and data are synthetic. The harness enables SQLCipher through Expo prebuild, creates 1,000 deterministic non-personal rows, reports SQLite/SQLCipher versions and timing markers, and exposes a long list for device characterization.
 
+The VAL-006 Hermes Android preparation also embeds byte-identical copies of the
+approved five-vector corpus and IANA `2026c` rule-base. A release runtime logs
+`[FIT_WP002_VAL006_HERMES]` only after Hermes and both asset hashes are checked.
+That output remains a candidate for human review; it cannot promote VAL-006.
+The assets are materialized from the locked dependency and canonical corpus by
+`npm run prepare:val006-hermes`; the generated copies are intentionally untracked.
+
 `Expo Go` is not valid evidence. Use a release prebuild on an explicitly selected physical device. The generated `android/` and `ios/` trees are disposable build outputs and remain ignored.
 
 No numeric result is a budget until a human approves and preregisters that budget. The initial runner deliberately rejects the 30-run sample count reserved for the formal `VAL-001` protocol.

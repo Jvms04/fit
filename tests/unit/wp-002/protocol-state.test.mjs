@@ -315,3 +315,69 @@ test("rejects a Node 24 VAL-006 record with unpinned stack or incomplete vectors
   assert.ok(errors.some((error) => error.includes("skew")));
   assert.ok(errors.some((error) => error.includes("consolidated")));
 });
+
+test("accepts Hermes Android preparation without treating it as runtime evidence", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-006").status = "PARTIAL";
+  state.temporalNode24 = {
+    status: "PARTIAL-EVIDENCE",
+    runtime: "Node 24",
+    dependencies: {
+      temporalPolyfill: "0.5.1",
+      momentTimezone: "0.6.3",
+      tzdb: "2026c"
+    },
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    vectors: { matched: 5, total: 5 },
+    skewDetected: true,
+    consolidatedPreserved: true,
+    futureUnconsolidatedReexpanded: true,
+    canonicalPromotion: false,
+    fallbackActivated: false,
+    hermes: { android: "NOT-EXECUTED", ios: "BLOCKED" }
+  };
+  state.temporalHermesAndroidPreparation = {
+    status: "PREPARED-AWAITING-HUMAN-GATE",
+    artifactName: "wp-002-android-probe",
+    runtimeExecution: "NOT-EXECUTED",
+    runtimeProof: "PENDING_PHYSICAL_EXECUTION",
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    ruleBaseSha256: "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    corpusSha256: "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141",
+    vectors: { prepared: 5, executed: 0 },
+    osTzdbDivergence: "NOT-EXECUTED",
+    ios: "BLOCKED",
+    canonicalPromotion: false,
+    fallbackActivated: false
+  };
+
+  assert.deepEqual(validateWp002State(state), []);
+});
+
+test("rejects Hermes preparation that fabricates execution, promotion, or a different rule base", () => {
+  const state = structuredClone(baseState);
+  state.temporalHermesAndroidPreparation = {
+    status: "PASS",
+    artifactName: "wp-002-android-probe",
+    runtimeExecution: "PASS",
+    runtimeProof: "VERIFIED",
+    ruleBaseId: "system-tzdb",
+    ruleBaseSha256: "0".repeat(64),
+    corpusSha256: "0".repeat(64),
+    vectors: { prepared: 5, executed: 5 },
+    osTzdbDivergence: "PASS",
+    ios: "PASS",
+    canonicalPromotion: true,
+    fallbackActivated: true
+  };
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("Hermes Android preparation status")));
+  assert.ok(errors.some((error) => error.includes("runtime execution")));
+  assert.ok(errors.some((error) => error.includes("rule-base")));
+  assert.ok(errors.some((error) => error.includes("corpus")));
+  assert.ok(errors.some((error) => error.includes("OS-TZDB")));
+  assert.ok(errors.some((error) => error.includes("iOS")));
+  assert.ok(errors.some((error) => error.includes("canonical promotion")));
+  assert.ok(errors.some((error) => error.includes("fallback")));
+});

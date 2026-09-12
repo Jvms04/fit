@@ -36,6 +36,20 @@
     "fallbackActivated": false,
     "hermes": { "android": "NOT-EXECUTED", "ios": "BLOCKED" }
   },
+  "temporalHermesAndroidPreparation": {
+    "status": "PREPARED-AWAITING-HUMAN-GATE",
+    "artifactName": "wp-002-android-probe",
+    "runtimeExecution": "NOT-EXECUTED",
+    "runtimeProof": "PENDING_PHYSICAL_EXECUTION",
+    "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "ruleBaseSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "corpusSha256": "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141",
+    "vectors": { "prepared": 5, "executed": 0 },
+    "osTzdbDivergence": "NOT-EXECUTED",
+    "ios": "BLOCKED",
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
   "platforms": {
     "androidPhysical": {
       "device": "Samsung Galaxy S23",
