@@ -47,6 +47,54 @@ export function validateWp002State(state) {
     errors.push("physical iOS evidence must remain explicitly BLOCKED with a reason");
   }
 
+  const val006 = byId.get("VAL-006");
+  const temporalNode24 = state?.temporalNode24;
+  if (val006?.status === "PARTIAL") {
+    if (temporalNode24?.status !== "PARTIAL-EVIDENCE" || temporalNode24.runtime !== "Node 24") {
+      errors.push("VAL-006 PARTIAL requires an explicit Node 24 partial-evidence record");
+    }
+    if (
+      temporalNode24?.dependencies?.temporalPolyfill !== "0.5.1" ||
+      temporalNode24?.dependencies?.momentTimezone !== "0.6.3" ||
+      temporalNode24?.dependencies?.tzdb !== "2026c"
+    ) {
+      errors.push("VAL-006 Node evidence must use the frozen temporal stack versions");
+    }
+    if (!/^iana-2026c\+moment-timezone-0\.6\.3\+sha256:[a-f0-9]{64}$/.test(temporalNode24?.ruleBaseId ?? "")) {
+      errors.push("VAL-006 Node evidence requires a hashed canonical rule_base_id");
+    }
+    if (
+      !Number.isInteger(temporalNode24?.vectors?.total) ||
+      temporalNode24.vectors.total < 1 ||
+      temporalNode24.vectors.matched !== temporalNode24.vectors.total
+    ) {
+      errors.push("VAL-006 Node vectors must all match their frozen expected values");
+    }
+    if (temporalNode24?.skewDetected !== true) {
+      errors.push("VAL-006 Node evidence must demonstrate rule-base skew detection");
+    }
+    if (
+      temporalNode24?.consolidatedPreserved !== true ||
+      temporalNode24?.futureUnconsolidatedReexpanded !== true
+    ) {
+      errors.push("VAL-006 Node evidence must preserve consolidated records and reexpand only future unconsolidated material");
+    }
+    if (temporalNode24?.canonicalPromotion !== false) {
+      errors.push("VAL-006 Node-only evidence cannot claim canonical promotion");
+    }
+    if (temporalNode24?.fallbackActivated !== false) {
+      errors.push("VAL-006 Node-only evidence cannot activate fallback");
+    }
+    if (temporalNode24?.hermes?.android !== "NOT-EXECUTED") {
+      errors.push("VAL-006 Node-only evidence must keep Hermes Android NOT-EXECUTED");
+    }
+    if (temporalNode24?.hermes?.ios !== "BLOCKED") {
+      errors.push("VAL-006 Node-only evidence must keep Hermes iOS BLOCKED");
+    }
+  } else if (temporalNode24) {
+    errors.push("VAL-006 Node evidence requires the protocol state to be PARTIAL");
+  }
+
   const diagnosticAttempts = state?.platforms?.androidPhysical?.diagnosticAttempts ?? [];
   if (diagnosticAttempts.some((attempt) =>
     attempt.classification === "ABORTED-DIAGNOSTIC" && attempt.characterizationEvidence !== false

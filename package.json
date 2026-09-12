@@ -10,7 +10,12 @@
     "check:wp002-state": "node tests/performance/wp-002/verify-state.mjs",
     "test:governance": "node --test tooling/governance/tests/*.test.mjs",
     "test:wp002": "node --test tests/unit/wp-002/*.test.mjs",
+    "probe:val006:node24": "node tests/temporal/wp-002/run-node-val006.mjs",
     "verify:wp001": "npm run test:governance && npm run check:governance",
     "verify:wp002": "npm run test:governance && npm run test:wp002 && npm run check:governance && npm run check:wp002-state"
+  },
+  "devDependencies": {
+    "@js-temporal/polyfill": "0.5.1",
+    "moment-timezone": "0.6.3"
   }
 }

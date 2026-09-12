@@ -234,3 +234,84 @@ test("rejects S23 Attempt 003 acceptance with incomplete crash evidence or canon
   assert.ok(errors.some((error) => error.includes("canonical formal validation")));
   assert.ok(errors.some((error) => error.includes("29 unique protocol force-stops")));
 });
+
+test("accepts only a partial Node 24 VAL-006 parcel while Hermes remains unresolved", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-006").status = "PARTIAL";
+  state.temporalNode24 = {
+    status: "PARTIAL-EVIDENCE",
+    runtime: "Node 24",
+    dependencies: {
+      temporalPolyfill: "0.5.1",
+      momentTimezone: "0.6.3",
+      tzdb: "2026c"
+    },
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    vectors: { matched: 5, total: 5 },
+    skewDetected: true,
+    consolidatedPreserved: true,
+    futureUnconsolidatedReexpanded: true,
+    canonicalPromotion: false,
+    fallbackActivated: false,
+    hermes: { android: "NOT-EXECUTED", ios: "BLOCKED" }
+  };
+
+  assert.deepEqual(validateWp002State(state), []);
+});
+
+test("rejects a Node-only VAL-006 parcel that claims promotion, fallback, or Hermes evidence", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-006").status = "PARTIAL";
+  state.temporalNode24 = {
+    status: "PARTIAL-EVIDENCE",
+    runtime: "Node 24",
+    dependencies: {
+      temporalPolyfill: "0.5.1",
+      momentTimezone: "0.6.3",
+      tzdb: "2026c"
+    },
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    vectors: { matched: 5, total: 5 },
+    skewDetected: true,
+    consolidatedPreserved: true,
+    futureUnconsolidatedReexpanded: true,
+    canonicalPromotion: true,
+    fallbackActivated: true,
+    hermes: { android: "PASS", ios: "PASS" }
+  };
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("VAL-006") && error.includes("canonical")));
+  assert.ok(errors.some((error) => error.includes("fallback")));
+  assert.ok(errors.some((error) => error.includes("Hermes Android")));
+  assert.ok(errors.some((error) => error.includes("Hermes iOS")));
+});
+
+test("rejects a Node 24 VAL-006 record with unpinned stack or incomplete vectors", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-006").status = "PARTIAL";
+  state.temporalNode24 = {
+    status: "PARTIAL-EVIDENCE",
+    runtime: "Node 24",
+    dependencies: {
+      temporalPolyfill: "latest",
+      momentTimezone: "0.6.3",
+      tzdb: "system"
+    },
+    ruleBaseId: "unversioned",
+    vectors: { matched: 4, total: 5 },
+    skewDetected: false,
+    consolidatedPreserved: false,
+    futureUnconsolidatedReexpanded: false,
+    canonicalPromotion: false,
+    fallbackActivated: false,
+    hermes: { android: "NOT-EXECUTED", ios: "BLOCKED" }
+  };
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("frozen temporal stack")));
+  assert.ok(errors.some((error) => error.includes("rule_base_id")));
+  assert.ok(errors.some((error) => error.includes("Node vectors")));
+  assert.ok(errors.some((error) => error.includes("skew")));
+  assert.ok(errors.some((error) => error.includes("consolidated")));
+});

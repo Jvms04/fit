@@ -9,10 +9,33 @@
     { "id": "VAL-001", "status": "NOT-EXECUTED" },
     { "id": "VAL-003", "status": "NOT-EXECUTED" },
     { "id": "VAL-004", "status": "NOT-EXECUTED" },
-    { "id": "VAL-006", "status": "NOT-EXECUTED" },
+    { "id": "VAL-006", "status": "PARTIAL" },
     { "id": "VAL-011", "status": "BLOCKED" },
     { "id": "VAL-016@P0", "status": "INCONCLUSIVE" }
   ],
+  "temporalNode24": {
+    "status": "PARTIAL-EVIDENCE",
+    "executedAt": "2026-09-12",
+    "runtime": "Node 24",
+    "runtimeVersion": "v24.19.0",
+    "report": "raw/VAL006_NODE24_PARTIAL.json",
+    "reportSizeBytes": 6699,
+    "reportSha256": "571cc728af288dcc6e220f5f3ff793a70bdee799a7ed0972e9a31ce796dd4e86",
+    "dependencies": {
+      "temporalPolyfill": "0.5.1",
+      "momentTimezone": "0.6.3",
+      "tzdb": "2026c"
+    },
+    "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "bundleSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "vectors": { "matched": 5, "total": 5 },
+    "skewDetected": true,
+    "consolidatedPreserved": true,
+    "futureUnconsolidatedReexpanded": true,
+    "canonicalPromotion": false,
+    "fallbackActivated": false,
+    "hermes": { "android": "NOT-EXECUTED", "ios": "BLOCKED" }
+  },
   "platforms": {
     "androidPhysical": {
       "device": "Samsung Galaxy S23",

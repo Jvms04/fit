@@ -1,0 +1,211 @@
+{
+  "schemaVersion": 1,
+  "wp": "WP-002",
+  "validation": "VAL-006",
+  "classification": "VAL006_NODE24_PARTIAL_EVIDENCE",
+  "runtime": {
+    "family": "Node",
+    "version": "v24.19.0",
+    "major": 24
+  },
+  "dependencies": {
+    "temporalPolyfill": "0.5.1",
+    "momentTimezone": "0.6.3",
+    "tzdb": "2026c"
+  },
+  "ruleBase": {
+    "id": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "bundleSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "bundleSizeBytes": 715527,
+    "bundlePath": "node_modules/moment-timezone/data/packed/latest.json"
+  },
+  "vectorSummary": {
+    "total": 5,
+    "matched": 5
+  },
+  "vectors": [
+    {
+      "id": "ny-gap-next-valid",
+      "input": {
+        "local": "2026-03-08T02:30:00",
+        "zone": "America/New_York"
+      },
+      "expected": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-03-08T02:30:00",
+        "resolvedLocal": "2026-03-08T03:00:00",
+        "instant": "2026-03-08T07:00:00Z",
+        "offset": "-04:00"
+      },
+      "actual": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-03-08T02:30:00",
+        "resolvedLocal": "2026-03-08T03:00:00",
+        "instant": "2026-03-08T07:00:00Z",
+        "offset": "-04:00"
+      },
+      "matchesExpected": true
+    },
+    {
+      "id": "ny-overlap-first",
+      "input": {
+        "local": "2026-11-01T01:30:00",
+        "zone": "America/New_York"
+      },
+      "expected": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-11-01T01:30:00",
+        "resolvedLocal": "2026-11-01T01:30:00",
+        "instant": "2026-11-01T05:30:00Z",
+        "offset": "-04:00"
+      },
+      "actual": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-11-01T01:30:00",
+        "resolvedLocal": "2026-11-01T01:30:00",
+        "instant": "2026-11-01T05:30:00Z",
+        "offset": "-04:00"
+      },
+      "matchesExpected": true
+    },
+    {
+      "id": "lord-howe-half-hour-gap",
+      "input": {
+        "local": "2026-10-04T02:15:00",
+        "zone": "Australia/Lord_Howe"
+      },
+      "expected": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-10-04T02:15:00",
+        "resolvedLocal": "2026-10-04T02:30:00",
+        "instant": "2026-10-03T15:30:00Z",
+        "offset": "+11:00"
+      },
+      "actual": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-10-04T02:15:00",
+        "resolvedLocal": "2026-10-04T02:30:00",
+        "instant": "2026-10-03T15:30:00Z",
+        "offset": "+11:00"
+      },
+      "matchesExpected": true
+    },
+    {
+      "id": "lord-howe-half-hour-overlap",
+      "input": {
+        "local": "2026-04-05T01:45:00",
+        "zone": "Australia/Lord_Howe"
+      },
+      "expected": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-04-05T01:45:00",
+        "resolvedLocal": "2026-04-05T01:45:00",
+        "instant": "2026-04-04T14:45:00Z",
+        "offset": "+11:00"
+      },
+      "actual": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-04-05T01:45:00",
+        "resolvedLocal": "2026-04-05T01:45:00",
+        "instant": "2026-04-04T14:45:00Z",
+        "offset": "+11:00"
+      },
+      "matchesExpected": true
+    },
+    {
+      "id": "kiritimati-year-rollover",
+      "input": {
+        "local": "2026-12-31T23:30:00",
+        "zone": "Pacific/Kiritimati"
+      },
+      "expected": {
+        "classification": "EXACT",
+        "requestedLocal": "2026-12-31T23:30:00",
+        "resolvedLocal": "2026-12-31T23:30:00",
+        "instant": "2026-12-31T09:30:00Z",
+        "offset": "+14:00"
+      },
+      "actual": {
+        "classification": "EXACT",
+        "requestedLocal": "2026-12-31T23:30:00",
+        "resolvedLocal": "2026-12-31T23:30:00",
+        "instant": "2026-12-31T09:30:00Z",
+        "offset": "+14:00"
+      },
+      "matchesExpected": true
+    }
+  ],
+  "handshake": {
+    "sameRevision": {
+      "classification": "MATCH",
+      "skewDetected": false
+    },
+    "differentHash": {
+      "classification": "RULE_BASE_SKEW",
+      "skewDetected": true
+    }
+  },
+  "futureRevisionAsset": {
+    "id": "synthetic-future-offset-revision",
+    "scope": "WP-002 VAL-006 disposable simulation only",
+    "zone": "America/New_York",
+    "effectiveFromLocal": "2027-01-01T00:00:00",
+    "revisedOffset": "-04:00",
+    "assetPath": "tests/temporal/wp-002/fixtures/synthetic-future-revision.json",
+    "assetSizeBytes": 231,
+    "assetSha256": "9f2e71444ea8d2541702843c386032e62f8a5b9f10360440fd9fdfe2a779feaa",
+    "ruleBaseId": "iana-synthetic-future+sha256:9f2e71444ea8d2541702843c386032e62f8a5b9f10360440fd9fdfe2a779feaa",
+    "hashVerified": true
+  },
+  "futureRevision": {
+    "records": [
+      {
+        "recordRef": "consolidated-occurrence",
+        "nominalLocal": "2027-02-01T09:00:00",
+        "instant": "2027-02-01T14:00:00Z",
+        "offset": "-05:00",
+        "identity": "occurrence-stable-001",
+        "version": 7,
+        "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+        "consolidated": true
+      },
+      {
+        "recordRef": "future-unconsolidated",
+        "nominalLocal": "2027-02-01T09:00:00",
+        "instant": "2027-02-01T13:00:00Z",
+        "offset": "-04:00",
+        "identity": "future-material-001",
+        "version": 2,
+        "ruleBaseId": "iana-synthetic-future+sha256:9f2e71444ea8d2541702843c386032e62f8a5b9f10360440fd9fdfe2a779feaa",
+        "consolidated": false,
+        "reexpanded": true
+      },
+      {
+        "recordRef": "past-unconsolidated",
+        "nominalLocal": "2026-12-01T09:00:00",
+        "instant": "2026-12-01T14:00:00Z",
+        "offset": "-05:00",
+        "identity": "past-material-001",
+        "version": 3,
+        "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+        "consolidated": false
+      }
+    ],
+    "changedRecordRefs": [
+      "future-unconsolidated"
+    ]
+  },
+  "networkRequired": false,
+  "hermes": {
+    "android": "NOT-EXECUTED",
+    "ios": "BLOCKED"
+  },
+  "canonicalPromotion": false,
+  "fallbackActivated": false,
+  "remainingProtocol": [
+    "Hermes Android with the identical versioned bundle and corpus",
+    "Hermes iOS with the identical versioned bundle and corpus",
+    "cross-runtime byte-for-byte vector comparison",
+    "deliberately divergent OS TZDB check"
+  ]
+}

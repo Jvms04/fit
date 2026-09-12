@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-future-offset-revision",
+  "scope": "WP-002 VAL-006 disposable simulation only",
+  "zone": "America/New_York",
+  "effectiveFromLocal": "2027-01-01T00:00:00",
+  "revisedOffset": "-04:00"
+}
