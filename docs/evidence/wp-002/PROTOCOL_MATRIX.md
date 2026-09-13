@@ -12,4 +12,4 @@ This matrix is operational evidence. It does not change a baseline and does not 
 | VAL-011 | Cloud Run ↔ PostgreSQL/Supavisor path | no Docker/Podman/PostgreSQL runner and no durable external resource authorized | not a substitute for remote path | not device-dependent | BLOCKED |
 | VAL-016@P0 | P0 Auth/session/custody checkpoint | two synthetic accounts and Supabase Auth sandbox absent | device evidence cannot replace Auth/account protocol | iOS portion unavailable | INCONCLUSIVE |
 
-`VAL-025` remains `NOT-EXECUTED`. No fallback is active. Emulator evidence, if later produced, is complementary only. `WP-002` is in review because every owned protocol now has evidence or an explicit blocked/inconclusive disposition; this does not satisfy G0-A or authorize WP-003.
+`VAL-025` remains `NOT-EXECUTED`. No fallback is active. Emulator evidence, if later produced, is complementary only. `WP-002` is `Done` because every owned protocol has evidence or an explicit partial/blocked/inconclusive disposition and the reviewed PR was integrated; this does not satisfy G0-A or authorize WP-003.

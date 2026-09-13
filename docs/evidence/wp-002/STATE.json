@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "wp": "WP-002",
   "increment": "G0 / INC-P0-01",
-  "status": "In Review",
+  "status": "Done",
   "val025": "NOT-EXECUTED",
   "protocols": [
     { "id": "SP-007", "status": "PARTIAL" },
