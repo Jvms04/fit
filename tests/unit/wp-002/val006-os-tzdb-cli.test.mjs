@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -21,4 +22,16 @@ test("OS-TZDB divergence runner emits partial evidence without fallback or promo
   assert.equal(report.syntheticOsOracle, true);
   assert.equal(report.canonicalPromotion, false);
   assert.equal(report.fallbackActivated, false);
+});
+
+test("CI pins the exact Node runtime used by the accepted partial evidence", async () => {
+  const workflow = await readFile(
+    fileURLToPath(new URL("../../../.github/workflows/wp-002-g0.yml", import.meta.url)),
+    "utf8"
+  );
+
+  const configuredRuntimes = [...workflow.matchAll(/node-version:\s*([^\s#]+)/gu)].map(
+    ([, version]) => version
+  );
+  assert.deepEqual(configuredRuntimes, ["24.19.0", "24.19.0", "24.19.0"]);
 });
