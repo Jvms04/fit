@@ -1,2 +1,1 @@
-synthetic-future-revision.json -text
-node24-vectors.json -text
+*.json -text
