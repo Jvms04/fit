@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "synthetic-os-tzdb-divergence",
+  "scope": "WP-002 VAL-006 disposable local protocol only",
+  "vectorId": "ny-gap-next-valid",
+  "osRuleBaseId": "os-tzdb-synthetic-divergent-v1",
+  "osObserved": {
+    "classification": "EXACT",
+    "requestedLocal": "2026-03-08T02:30:00",
+    "resolvedLocal": "2026-03-08T02:30:00",
+    "instant": "2026-03-08T07:30:00Z",
+    "offset": "-05:00"
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "protocol": "SP-007",
+  "stage": "INITIAL-CHARACTERIZATION",
+  "formalValidation": false,
+  "budgetApplied": false,
+  "sampleCountPerLaunchMode": 5,
+  "launchProtocol": {
+    "coldExpectedState": "COLD",
+    "warmPreparation": "KEYCODE_BACK",
+    "warmExpectedState": "WARM",
+    "requiredTimingField": "TotalTime",
+    "waitTimeMaySubstituteTotalTime": false,
+    "ineligibleAttemptDisposition": "ABORTED_DIAGNOSTIC"
+  },
+  "syntheticData": {
+    "rowCount": 1000,
+    "classification": "exploratory",
+    "containsPersonalData": false,
+    "representsApprovedAlphaVolume": false
+  },
+  "measurements": [
+    "Android am start -W cold TotalTime",
+    "Android am start -W warm TotalTime",
+    "Android dumpsys meminfo TOTAL PSS",
+    "harness-reported SQLCipher/SQLite versions",
+    "harness-reported database preparation duration",
+    "harness-reported JavaScript readiness duration"
+  ],
+  "prohibitions": [
+    "do not infer a supported minimum OS",
+    "do not treat one device as the final matrix",
+    "do not compare against a budget before human approval",
+    "do not mark SP-007 or any VAL PASS",
+    "do not activate a fallback from incomplete evidence"
+  ]
+}

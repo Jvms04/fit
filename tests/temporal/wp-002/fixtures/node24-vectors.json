@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "ruleBase": {
+    "package": "moment-timezone",
+    "packageVersion": "0.6.3",
+    "tzdbVersion": "2026c"
+  },
+  "vectors": [
+    {
+      "id": "ny-gap-next-valid",
+      "input": { "local": "2026-03-08T02:30:00", "zone": "America/New_York" },
+      "expected": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-03-08T02:30:00",
+        "resolvedLocal": "2026-03-08T03:00:00",
+        "instant": "2026-03-08T07:00:00Z",
+        "offset": "-04:00"
+      }
+    },
+    {
+      "id": "ny-overlap-first",
+      "input": { "local": "2026-11-01T01:30:00", "zone": "America/New_York" },
+      "expected": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-11-01T01:30:00",
+        "resolvedLocal": "2026-11-01T01:30:00",
+        "instant": "2026-11-01T05:30:00Z",
+        "offset": "-04:00"
+      }
+    },
+    {
+      "id": "lord-howe-half-hour-gap",
+      "input": { "local": "2026-10-04T02:15:00", "zone": "Australia/Lord_Howe" },
+      "expected": {
+        "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+        "requestedLocal": "2026-10-04T02:15:00",
+        "resolvedLocal": "2026-10-04T02:30:00",
+        "instant": "2026-10-03T15:30:00Z",
+        "offset": "+11:00"
+      }
+    },
+    {
+      "id": "lord-howe-half-hour-overlap",
+      "input": { "local": "2026-04-05T01:45:00", "zone": "Australia/Lord_Howe" },
+      "expected": {
+        "classification": "REPEATED_FIRST_OCCURRENCE",
+        "requestedLocal": "2026-04-05T01:45:00",
+        "resolvedLocal": "2026-04-05T01:45:00",
+        "instant": "2026-04-04T14:45:00Z",
+        "offset": "+11:00"
+      }
+    },
+    {
+      "id": "kiritimati-year-rollover",
+      "input": { "local": "2026-12-31T23:30:00", "zone": "Pacific/Kiritimati" },
+      "expected": {
+        "classification": "EXACT",
+        "requestedLocal": "2026-12-31T23:30:00",
+        "resolvedLocal": "2026-12-31T23:30:00",
+        "instant": "2026-12-31T09:30:00Z",
+        "offset": "+14:00"
+      }
+    }
+  ]
+}

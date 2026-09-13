@@ -1,0 +1,240 @@
+{
+  "schemaVersion": 1,
+  "wp": "WP-002",
+  "increment": "G0 / INC-P0-01",
+  "status": "In Review",
+  "val025": "NOT-EXECUTED",
+  "protocols": [
+    { "id": "SP-007", "status": "PARTIAL" },
+    { "id": "VAL-001", "status": "PARTIAL" },
+    { "id": "VAL-003", "status": "PARTIAL" },
+    { "id": "VAL-004", "status": "PARTIAL" },
+    { "id": "VAL-006", "status": "PARTIAL" },
+    { "id": "VAL-011", "status": "BLOCKED" },
+    { "id": "VAL-016@P0", "status": "INCONCLUSIVE" }
+  ],
+  "temporalNode24": {
+    "status": "PARTIAL-EVIDENCE",
+    "executedAt": "2026-09-12",
+    "runtime": "Node 24",
+    "runtimeVersion": "v24.19.0",
+    "report": "raw/VAL006_NODE24_PARTIAL.json",
+    "reportSizeBytes": 6699,
+    "reportSha256": "571cc728af288dcc6e220f5f3ff793a70bdee799a7ed0972e9a31ce796dd4e86",
+    "dependencies": {
+      "temporalPolyfill": "0.5.1",
+      "momentTimezone": "0.6.3",
+      "tzdb": "2026c"
+    },
+    "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "bundleSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "vectors": { "matched": 5, "total": 5 },
+    "skewDetected": true,
+    "consolidatedPreserved": true,
+    "futureUnconsolidatedReexpanded": true,
+    "canonicalPromotion": false,
+    "fallbackActivated": false,
+    "hermes": { "android": "NOT-EXECUTED", "ios": "BLOCKED" }
+  },
+  "temporalHermesAndroidPreparation": {
+    "status": "READY-PHYSICAL-EXECUTION-BLOCKED-BY-ADB",
+    "humanGate": "APPROVED",
+    "executorConnection": "ABSENT",
+    "artifactName": "wp-002-android-probe",
+    "captureRunner": "tests/temporal/wp-002/capture-hermes-android.mjs",
+    "runtimeExecution": "NOT-EXECUTED",
+    "runtimeProof": "PENDING_PHYSICAL_EXECUTION",
+    "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "ruleBaseSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "corpusSha256": "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141",
+    "vectors": { "prepared": 5, "executed": 0 },
+    "osTzdbDivergence": "PARTIAL-LOCAL-SYNTHETIC-ORACLE",
+    "ios": "BLOCKED",
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
+  "temporalOsTzdbDivergence": {
+    "status": "PARTIAL-LOCAL-EVIDENCE",
+    "report": "raw/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json",
+    "reportSizeBytes": 1972,
+    "reportSha256": "08678e357ae903c6e188bd71945fd6768138540806260bb50a02306a9a36b6ab",
+    "fixture": "tests/temporal/wp-002/fixtures/os-tzdb-divergence.json",
+    "fixtureSizeBytes": 417,
+    "fixtureSha256": "44a29708e16ef3f33be69e40f61a19dfd816158569ce26ccc142f3c290d59058",
+    "syntheticOsOracle": true,
+    "actualOsTzdbMutated": false,
+    "divergenceDetected": true,
+    "authority": "VERSIONED_BUNDLE",
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
+  "cryptoStaticReadiness": {
+    "status": "STATIC-READINESS-ONLY",
+    "report": "raw/VAL003_VAL004_STATIC_READINESS.json",
+    "reportSizeBytes": 1170,
+    "reportSha256": "98c64c906b43377dfe6f55a06894e1d80558c76917940e8737b666d03607472d",
+    "sqlCipherBuildConfigured": true,
+    "secureStoreConfigured": true,
+    "csprngConfigured": true,
+    "mathRandomUsedForKeys": false,
+    "androidBackupDisabled": true,
+    "val003RuntimeProtocolExecuted": false,
+    "val004AccountLifecycleExecuted": false,
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
+  "hostReadiness": {
+    "report": "raw/HOST_ENVIRONMENT.json",
+    "reportSizeBytes": 1514,
+    "reportSha256": "413ecd8f5a90e14f474f32d81bec3faa11d15f9795d10a3de2d25ba194a0bf2b",
+    "adbDevices": 0,
+    "adbMdnsServices": 0,
+    "dockerOrEquivalent": "ABSENT",
+    "localPostgresql17Runner": "ABSENT"
+  },
+  "platforms": {
+    "androidPhysical": {
+      "device": "Samsung Galaxy S23",
+      "os": "Android 16",
+      "availabilitySource": "human-executed",
+      "executorConnection": "ABSENT",
+      "status": "PARTIAL",
+      "diagnosticAttempts": [
+        {
+          "id": "SP007-S23-ATTEMPT-001",
+          "classification": "ABORTED-DIAGNOSTIC",
+          "characterizationEvidence": false,
+          "resultFile": "INVALID-ZERO-BYTES",
+          "harnessHead": "2678cd63c25a96f15a24927dfdecb31a82b09651"
+        }
+      ],
+      "characterizationAttempts": [
+        {
+          "id": "SP007-S23-ATTEMPT-002",
+          "classification": "INITIAL_CHARACTERIZATION_CANDIDATE",
+          "disposition": "PARTIAL",
+          "characterizationEvidence": true,
+          "rawArtifact": "raw/SP007_S23_ATTEMPT_002_RAW_UTF16LE.json",
+          "canonicalArtifact": "raw/SP007_S23_ATTEMPT_002_CANONICAL_UTF8.json",
+          "provenance": "raw/SP007_S23_ATTEMPT_002_PROVENANCE.json",
+          "harnessHead": "52ba378e434e2d13fe1f07564ce730850391a708",
+          "budgetApplied": false,
+          "formalValidation": false
+        }
+      ],
+      "formalAttempts": [
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-001",
+          "classification": "ABORTED_DIAGNOSTIC",
+          "disposition": "DIAGNOSTIC-ONLY",
+          "formalValidation": false,
+          "characterizationEvidence": false,
+          "rawArtifact": "EXTERNAL-NOT-INGESTED",
+          "rawArtifactName": "sp007-s23-formal-30.json",
+          "rawArtifactSizeBytes": 449421,
+          "rawArtifactSha256": "NOT-PROVIDED",
+          "diagnosticRecord": "raw/SP007_S23_FORMAL_ATTEMPT_001_DIAGNOSTIC.md",
+          "harnessHead": "27b41f66bb44137978cb972a506f3d941f140f3e",
+          "ciArtifactId": 10179821471,
+          "exitCode": 2,
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 0 },
+          "warmBudgetEvaluated": false,
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
+        },
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-002",
+          "classification": "FORMAL_RUN_EVIDENCE_CANDIDATE",
+          "disposition": "PERFORMANCE-ACCEPTED-CRASH-EVIDENCE-INSUFFICIENT",
+          "formalValidation": false,
+          "performanceEvidenceAccepted": true,
+          "warmEvidenceAccepted": true,
+          "zeroCrashCriterionEvidence": "INSUFFICIENT-FOR-GATE",
+          "rawArtifact": "EXTERNAL-HUMAN-CUSTODY",
+          "rawArtifactName": "sp007-s23-formal-attempt-002.json",
+          "rawArtifactSizeBytes": 7674836,
+          "rawArtifactSha256": "a9ecc61f10aff94a978a253b717cf01c60ad34e5e6ece01f148967a86fcb7041",
+          "minimizedEvidence": "raw/SP007_S23_FORMAL_ATTEMPT_002_MINIMIZED.md",
+          "harnessHead": "7e5017bf801f872ee6d53f653890e91a2cd71a7e",
+          "ciArtifactId": 10265024441,
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 30 },
+          "measurements": {
+            "coldStartupTotalTimeP95Ms": 173,
+            "warmStartupTotalTimeP95Ms": 112,
+            "coldTotalPssP95Kb": 110087,
+            "warmPreflight": "WARM / MEASURED"
+          },
+          "retainedExitInfoReanalysis": {
+            "retainedNewRecords": 16,
+            "expectedProtocolRecords": 16,
+            "abnormalRecords": 0,
+            "completeSequenceCoverage": false
+          },
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
+        },
+        {
+          "id": "SP007-S23-FORMAL-ATTEMPT-003",
+          "classification": "FORMAL_RUN_EVIDENCE_CANDIDATE",
+          "disposition": "S23-LINE-ACCEPTED-BY-HUMAN-REVIEW",
+          "formalValidation": false,
+          "performanceEvidenceAccepted": true,
+          "warmEvidenceAccepted": true,
+          "zeroCrashCriterionEvidence": "ACCEPTED-FOR-S23-LINE",
+          "runnerCriteriaMet": true,
+          "humanReview": "APPROVED-FOR-S23-LINE",
+          "rawArtifact": "EXTERNAL-HUMAN-CUSTODY",
+          "rawArtifactName": "sp007-s23-formal-attempt-003.json",
+          "rawArtifactSizeBytes": 8963470,
+          "rawArtifactSha256": "8dd6717c1513434d4a4af0f1553a71e6bd7c897510947c81c9dfd25ade71c216",
+          "minimizedEvidence": "raw/SP007_S23_FORMAL_ATTEMPT_003_MINIMIZED.md",
+          "harnessHead": "82878218cf432998bd6b9582ca0b3e88873c68e0",
+          "ciArtifactId": 10269505251,
+          "apkSha256": "5fd2ca6ebd7c1f75c4e662b1a66d48188bf039cad4b93bed23d66f219e354b69",
+          "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
+          "completed": { "cold": 30, "warm": 30 },
+          "validSamples": { "cold": 30, "warm": 30 },
+          "measurements": {
+            "coldStartupTotalTimeP95Ms": 209,
+            "warmStartupTotalTimeP95Ms": 131,
+            "coldTotalPssP95Kb": 107711
+          },
+          "crashEvidence": {
+            "checkpoints": 31,
+            "uniqueNewRecords": 29,
+            "expectedProtocolRecords": 29,
+            "expectedReason": "10 / PROTOCOL_FORCE_STOP",
+            "abnormalRecords": 0,
+            "observedCrashes": 0
+          },
+          "stackFailureEvidence": false,
+          "fallbackAuthorized": false
+        }
+      ],
+      "budgets": {
+        "status": "APPROVED-PREREGISTERED",
+        "record": "SP007_S23_BUDGETS.json",
+        "retrospectiveApplication": false,
+        "preregistrationCommit": "4f108a56d1b3553836eac65662d449809715ee87",
+        "formalRunPreparation": "S23-LINE-CLOSEOUT-RECORDED",
+        "formalRunner": "tests/performance/wp-002/formal-android.mjs",
+        "formalRunStarted": true,
+        "formalRunResult": "ATTEMPT-003-S23-LINE-ACCEPTED",
+        "nextFormalRun": "ATTEMPT-004-PROHIBITED"
+      }
+    },
+    "iosPhysical": {
+      "status": "BLOCKED",
+      "reason": "No iPhone/macOS/Xcode/provisioning available"
+    }
+  },
+  "externalResources": {
+    "supabase": "NOT-PROVISIONED-BY-WP-002",
+    "gcp": "NOT-PROVISIONED-BY-WP-002",
+    "dockerOrEquivalent": "ABSENT",
+    "twoSyntheticAccounts": "ABSENT",
+    "localPostgresql17Runner": "ABSENT"
+  }
+}

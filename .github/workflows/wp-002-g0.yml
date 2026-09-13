@@ -1,0 +1,159 @@
+name: WP-002 G0 harness
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/wp-002-g0.yml"
+      - "docs/evidence/**"
+      - "tests/**"
+      - "tooling/governance/**"
+      - "package.json"
+      - "package-lock.json"
+
+permissions:
+  contents: read
+
+jobs:
+  wp002-g0:
+    name: wp002-g0
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            tests/native/wp-002-mobile-harness/package-lock.json
+      - name: Install locked governance metadata
+        run: npm ci --ignore-scripts
+      - name: Verify WP-002 state and guardrails
+        run: npm run verify:wp002
+      - name: Reproduce local partial evidence
+        run: |
+          npm run --silent probe:val006:os-tzdb > /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json
+          npm run --silent probe:crypto-readiness > /tmp/VAL003_VAL004_STATIC_READINESS.json
+          cmp /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json docs/evidence/wp-002/raw/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json
+          cmp /tmp/VAL003_VAL004_STATIC_READINESS.json docs/evidence/wp-002/raw/VAL003_VAL004_STATIC_READINESS.json
+          echo "08678e357ae903c6e188bd71945fd6768138540806260bb50a02306a9a36b6ab  /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json" | sha256sum --check
+          echo "98c64c906b43377dfe6f55a06894e1d80558c76917940e8737b666d03607472d  /tmp/VAL003_VAL004_STATIC_READINESS.json" | sha256sum --check
+          echo "ffc27cd2de0de43180f11d02fac07fbae2eb5ed3ec3180d1d873a933a90de0f6  docs/evidence/wp-002/SP007_S23_BUDGETS.json" | sha256sum --check
+      - name: Install locked disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm ci --ignore-scripts
+      - name: Typecheck disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run typecheck
+      - name: Resolve public Expo configuration
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run config:public
+
+  wp002-windows-tests:
+    name: wp002-windows-tests
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+      - name: Install locked governance metadata
+        run: npm ci --ignore-scripts
+      - name: Run WP-002 tests on the physical-executor OS family
+        run: npm run test:wp002
+
+  android-probe-build:
+    name: android-probe-build
+    needs: wp002-g0
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Use Node.js 24
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: tests/native/wp-002-mobile-harness/package-lock.json
+      - name: Install locked disposable harness
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm ci --ignore-scripts
+      - name: Materialize verified VAL-006 Hermes assets
+        working-directory: tests/native/wp-002-mobile-harness
+        run: npm run prepare:val006-hermes
+      - name: Generate disposable Android project
+        working-directory: tests/native/wp-002-mobile-harness
+        run: EXPO_OFFLINE=1 ./node_modules/.bin/expo prebuild --platform android --clean --no-install
+      - name: Report Android build environment
+        working-directory: tests/native/wp-002-mobile-harness/android
+        run: |
+          java -version
+          ./gradlew --version
+      - name: Build arm64 release probe
+        working-directory: tests/native/wp-002-mobile-harness/android
+        run: ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a --no-daemon
+      - name: Generate verifiable APK provenance
+        env:
+          WP002_SOURCE_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          APK_PATH="tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/app-release.apk"
+          OUTPUT_DIR="$(dirname "$APK_PATH")"
+          APKANALYZER_BIN="${ANDROID_HOME}/cmdline-tools/latest/bin/apkanalyzer"
+          test -x "$APKANALYZER_BIN"
+          node tests/performance/wp-002/create-apk-metadata.mjs \
+            --apk "$APK_PATH" \
+            --apkanalyzer "$APKANALYZER_BIN" \
+            --output "$OUTPUT_DIR/APK_PROVENANCE.json"
+          node tests/temporal/wp-002/create-hermes-android-provenance.mjs \
+            --apk "$APK_PATH" \
+            --apk-metadata "$OUTPUT_DIR/APK_PROVENANCE.json" \
+            --app-config "tests/native/wp-002-mobile-harness/app.json" \
+            --output "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json"
+          (
+            cd "$OUTPUT_DIR"
+            sha256sum \
+              app-release.apk \
+              APK_PROVENANCE.json \
+              HERMES_ANDROID_PROVENANCE.json \
+              > APK_PROVENANCE.sha256
+          )
+          {
+            echo "### WP-002 authorized APK"
+            echo "- Source head: \`$(jq -r '.source.headSha' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
+            echo "- APK SHA-256: \`$(jq -r '.apk.sha256' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
+            echo "- APK size: \`$(jq -r '.apk.sizeBytes' "$OUTPUT_DIR/APK_PROVENANCE.json") bytes\`"
+            echo "- Metadata SHA-256: \`$(sha256sum "$OUTPUT_DIR/APK_PROVENANCE.json" | cut -d' ' -f1)\`"
+            echo "- Package: \`$(jq -r '.apk.packageName' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
+            echo "- Variant/debuggable: \`$(jq -r '.build.variant' "$OUTPUT_DIR/APK_PROVENANCE.json") / $(jq -r '.apk.debuggable' "$OUTPUT_DIR/APK_PROVENANCE.json")\`"
+            echo "- Android bundle format: \`$(jq -r '.engine.androidBundleFormat' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Hermes bytecode magic: \`$(jq -r '.engine.bytecodeMagicHex' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- arm64 runtime library: \`$(jq -r '.engine.arm64RuntimeLibraryEntry' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Embedded TZDB/version: \`$(jq -r '.ruleBase.sha256' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json") / $(jq -r '.ruleBase.tzdbVersion' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Embedded corpus SHA-256/vectors: \`$(jq -r '.corpus.sha256' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json") / $(jq -r '.corpus.vectorCount' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+            echo "- Hermes runtime proof: \`$(jq -r '.engine.runtimeProof' "$OUTPUT_DIR/HERMES_ANDROID_PROVENANCE.json")\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload disposable probe APK and provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: wp-002-android-probe
+          path: |
+            tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/app-release.apk
+            tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/APK_PROVENANCE.json
+            tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/HERMES_ANDROID_PROVENANCE.json
+            tests/native/wp-002-mobile-harness/android/app/build/outputs/apk/release/APK_PROVENANCE.sha256
+          if-no-files-found: error
+          retention-days: 3

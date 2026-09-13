@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "wp": "WP-002",
+  "classification": "VAL003_VAL004_STATIC_READINESS_PARTIAL",
+  "inspectedSurface": [
+    "tests/native/wp-002-mobile-harness/app.json",
+    "tests/native/wp-002-mobile-harness/App.tsx",
+    "tests/native/wp-002-mobile-harness/package-lock.json"
+  ],
+  "lockedDependencies": {
+    "expoSqlite": "57.0.2",
+    "expoSecureStore": "57.0.3",
+    "expoCrypto": "57.0.2"
+  },
+  "val003": {
+    "sqlCipherBuildConfigured": true,
+    "runtimeProtocolExecuted": false,
+    "wrongKeyExecuted": false,
+    "rekeyCrashExecuted": false,
+    "fileCanaryExtractionExecuted": false,
+    "performanceBudget": "NOT-PROPOSED"
+  },
+  "val004": {
+    "secureStoreConfigured": true,
+    "csprngConfigured": true,
+    "mathRandomUsedForKeys": false,
+    "deviceOnlyAccessibilityConfigured": true,
+    "androidBackupDisabled": true,
+    "accountLifecycleExecuted": false,
+    "biometricChangeExecuted": false,
+    "backupRestoreExecuted": false
+  },
+  "evidenceKind": "STATIC-READINESS-ONLY",
+  "physicalAndroidRequired": true,
+  "physicalIosRequired": true,
+  "canonicalPromotion": false,
+  "automaticPromotion": false,
+  "fallbackActivated": false
+}

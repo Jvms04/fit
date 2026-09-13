@@ -1,0 +1,31 @@
+{
+  "name": "@fit/wp-002-mobile-harness",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Disposable G0 mobile probe; never promote into the production scaffold.",
+  "main": "index.ts",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "prepare:val006-hermes": "node scripts/prepare-val006-assets.mjs",
+    "prebuild:android": "expo prebuild --platform android --clean --no-install",
+    "typecheck": "tsc --noEmit",
+    "config:public": "expo config --type public"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "0.5.1",
+    "expo": "~57.0.21",
+    "expo-asset": "57.0.16",
+    "expo-crypto": "~57.0.2",
+    "expo-file-system": "57.0.6",
+    "expo-secure-store": "~57.0.3",
+    "expo-sqlite": "~57.0.2",
+    "expo-status-bar": "~57.0.1",
+    "moment-timezone": "0.6.3",
+    "react": "19.2.3",
+    "react-native": "0.86.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  }
+}

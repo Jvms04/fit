@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "evidenceId": "SP007-S23-ATTEMPT-002",
+  "protocol": "SP-007",
+  "classification": "INITIAL_CHARACTERIZATION_CANDIDATE",
+  "disposition": "PARTIAL",
+  "source": {
+    "receivedFilename": "sp007-s23-initial.json",
+    "receivedOn": "2026-09-10",
+    "independentByteConfirmation": true
+  },
+  "rawArtifact": {
+    "path": "docs/evidence/wp-002/raw/SP007_S23_ATTEMPT_002_RAW_UTF16LE.json",
+    "encoding": "UTF-16LE",
+    "bomHex": "FF FE",
+    "byteLength": 20362,
+    "sha256": "f44b2201e84b6c7cbb5a4c03cfba8e5b9e5efb8195f6bf645c28fb6845526e3a"
+  },
+  "canonicalArtifact": {
+    "path": "docs/evidence/wp-002/raw/SP007_S23_ATTEMPT_002_CANONICAL_UTF8.json",
+    "encoding": "UTF-8",
+    "bom": false,
+    "byteLength": 9958,
+    "sha256": "65f0c68ed89f42ca8239793256128627c60a85b3883d068462be8613e28d1387"
+  },
+  "canonicalization": {
+    "operation": "remove the UTF-16LE BOM, decode and parse JSON, then serialize with two-space indentation and a final newline as UTF-8 without a BOM",
+    "jsonReformatting": true,
+    "unicodeNormalization": "none",
+    "lineEndingNormalization": "LF for JSON formatting outside string values; string values are unchanged",
+    "verification": {
+      "decodedTextEqual": false,
+      "semanticJsonEquivalent": true,
+      "rawDecodedCharacterCount": 10180,
+      "canonicalCharacterCount": 9958
+    }
+  },
+  "execution": {
+    "generatedAt": "2026-09-10T14:51:51.939Z",
+    "harnessHead": "52ba378e434e2d13fe1f07564ce730850391a708",
+    "buildWorkflowRun": "34488068572",
+    "apkArtifactId": "10157046732",
+    "device": "Samsung Galaxy S23 (SM-S911B)",
+    "os": "Android 16 / API 36",
+    "deviceSerialReference": "sha256:edc03f85115f"
+  },
+  "evidenceBoundary": {
+    "budgetAppliedDuringAcquisition": false,
+    "formalValidation": false,
+    "sp007Complete": false,
+    "val001Executed": false
+  }
+}

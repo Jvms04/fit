@@ -1,0 +1,30 @@
+{
+  "expo": {
+    "name": "WP-002 G0 Harness",
+    "slug": "fit-wp-002-g0-harness",
+    "version": "0.0.0",
+    "runtimeVersion": "wp-002-disposable",
+    "jsEngine": "hermes",
+    "orientation": "portrait",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.fit.wp002probe",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.fit.wp002probe",
+      "versionCode": 1,
+      "allowBackup": false
+    },
+    "plugins": [
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": false,
+          "useSQLCipher": true,
+          "withSQLiteVecExtension": false
+        }
+      ]
+    ]
+  }
+}

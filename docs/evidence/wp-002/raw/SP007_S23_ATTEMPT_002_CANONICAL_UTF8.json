@@ -1,0 +1,222 @@
+{
+  "schemaVersion": 1,
+  "protocol": "SP-007",
+  "stage": "INITIAL-CHARACTERIZATION",
+  "attemptClassification": "INITIAL_CHARACTERIZATION_CANDIDATE",
+  "disposition": "PARTIAL",
+  "generatedAt": "2026-09-10T14:51:51.939Z",
+  "budgetApplied": false,
+  "formalValidation": false,
+  "protocolValidity": {
+    "eligibleForSp007Characterization": true,
+    "expectedLaunchStates": [
+      "COLD",
+      "WARM"
+    ],
+    "warmPreparation": "KEYCODE_BACK",
+    "totalTimePolicy": "TotalTime is required; WaitTime is retained raw and never substituted"
+  },
+  "environment": {
+    "serialRef": "sha256:edc03f85115f",
+    "manufacturer": "samsung",
+    "model": "SM-S911B",
+    "device": "dm1q",
+    "androidRelease": "16",
+    "apiLevel": "36",
+    "buildFingerprint": "samsung/dm1qxxx/dm1q:16/BP4A.251205.006/S911BXXSAFZG1:user/release-keys",
+    "wmSize": "Physical size: 1080x2340",
+    "wmDensity": "Physical density: 480",
+    "adb": "Android Debug Bridge version 1.0.41\r\nVersion 37.0.1-15733141\r\nInstalled as C:\\platform-tools\\adb.exe\r\nRunning on Windows 10.0.26200"
+  },
+  "subject": {
+    "packageName": "com.fit.wp002probe",
+    "activity": "com.fit.wp002probe/.MainActivity",
+    "samples": 5
+  },
+  "raw": {
+    "cold": [
+      {
+        "sample": 1,
+        "launch": {
+          "status": "ok",
+          "launchState": "COLD",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 365,
+          "waitTimeMs": 369,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 365\r\nWaitTime: 369\r\nComplete"
+        },
+        "totalPssKb": 113911,
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 2,
+        "launch": {
+          "status": "ok",
+          "launchState": "COLD",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 174,
+          "waitTimeMs": 176,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 174\r\nWaitTime: 176\r\nComplete"
+        },
+        "totalPssKb": 104027,
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 3,
+        "launch": {
+          "status": "ok",
+          "launchState": "COLD",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 294,
+          "waitTimeMs": 296,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 294\r\nWaitTime: 296\r\nComplete"
+        },
+        "totalPssKb": 115824,
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 4,
+        "launch": {
+          "status": "ok",
+          "launchState": "COLD",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 286,
+          "waitTimeMs": 288,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 286\r\nWaitTime: 288\r\nComplete"
+        },
+        "totalPssKb": 104070,
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 5,
+        "launch": {
+          "status": "ok",
+          "launchState": "COLD",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 217,
+          "waitTimeMs": 218,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: COLD\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 217\r\nWaitTime: 218\r\nComplete"
+        },
+        "totalPssKb": 118305,
+        "protocolClassification": "MEASURED"
+      }
+    ],
+    "warm": [
+      {
+        "sample": 1,
+        "launch": {
+          "status": "ok",
+          "launchState": "WARM",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 85,
+          "waitTimeMs": 86,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: WARM\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 85\r\nWaitTime: 86\r\nComplete"
+        },
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 2,
+        "launch": {
+          "status": "ok",
+          "launchState": "WARM",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 98,
+          "waitTimeMs": 100,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: WARM\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 98\r\nWaitTime: 100\r\nComplete"
+        },
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 3,
+        "launch": {
+          "status": "ok",
+          "launchState": "WARM",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 97,
+          "waitTimeMs": 98,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: WARM\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 97\r\nWaitTime: 98\r\nComplete"
+        },
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 4,
+        "launch": {
+          "status": "ok",
+          "launchState": "WARM",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 93,
+          "waitTimeMs": 95,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: WARM\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 93\r\nWaitTime: 95\r\nComplete"
+        },
+        "protocolClassification": "MEASURED"
+      },
+      {
+        "sample": 5,
+        "launch": {
+          "status": "ok",
+          "launchState": "WARM",
+          "activity": "com.fit.wp002probe/.MainActivity",
+          "thisTimeMs": null,
+          "totalTimeMs": 125,
+          "waitTimeMs": 129,
+          "complete": true,
+          "raw": "Starting: Intent { cmp=com.fit.wp002probe/.MainActivity }\r\nStatus: ok\r\nLaunchState: WARM\r\nActivity: com.fit.wp002probe/.MainActivity\r\nTotalTime: 125\r\nWaitTime: 129\r\nComplete"
+        },
+        "protocolClassification": "MEASURED"
+      }
+    ],
+    "probeLog": [
+      "         1789051905.644  5772  5807 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":70.37026000022888,\"readyMs\":83.30223900079727}",
+      "         1789051906.018  5772  5807 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":39.680468022823334,\"readyMs\":457.8101040124893}",
+      "         1789051906.535  5966  6001 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":44.08463495969772,\"readyMs\":54.35765600204468}",
+      "         1789051906.978  5966  6001 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":85.63473999500275,\"readyMs\":497.01973897218704}",
+      "         1789051907.522  6167  6296 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":40.04562497138977,\"readyMs\":49.98697900772095}",
+      "         1789051907.964  6167  6296 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":45.88187497854233,\"readyMs\":492.83354103565216}",
+      "         1789051908.596  6409  6431 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":46.40390598773956,\"readyMs\":56.96583300828934}",
+      "         1789051909.056  6409  6431 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":42.110936999320984,\"readyMs\":517.6602079868317}",
+      "         1789051910.109  6536  6571 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":60.075937032699585,\"readyMs\":71.0222390294075}",
+      "         1789051911.863  6536  6571 I ReactNativeJS: [FIT_WP002] {\"status\":\"ready\",\"sqliteVersion\":\"3.49.1\",\"cipherVersion\":\"4.7.0 community\",\"rowCount\":1000,\"databaseMs\":59.817395985126495,\"readyMs\":1824.9903640151024}"
+    ]
+  },
+  "summaries": {
+    "coldTotalTime": {
+      "count": 5,
+      "minMs": 174,
+      "medianMs": 286,
+      "p95Ms": 365,
+      "maxMs": 365
+    },
+    "warmTotalTime": {
+      "count": 5,
+      "minMs": 85,
+      "medianMs": 97,
+      "p95Ms": 125,
+      "maxMs": 125
+    }
+  },
+  "limitations": [
+    "single Android physical device row",
+    "initial sample only; not the 30-run VAL-001 protocol",
+    "no approved budget applied",
+    "no iOS physical evidence",
+    "does not establish minimum, intermediate, or current support matrix"
+  ]
+}
