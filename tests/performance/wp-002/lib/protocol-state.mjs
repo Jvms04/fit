@@ -103,8 +103,11 @@ export function validateWp002State(state) {
       "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141";
     const expectedRuleBaseId =
       `iana-2026c+moment-timezone-0.6.3+sha256:${expectedRuleBaseSha}`;
-    if (temporalHermesAndroidPreparation.status !== "PREPARED-AWAITING-HUMAN-GATE") {
-      errors.push("Hermes Android preparation status must remain PREPARED-AWAITING-HUMAN-GATE");
+    if (!new Set([
+      "PREPARED-AWAITING-HUMAN-GATE",
+      "READY-PHYSICAL-EXECUTION-BLOCKED-BY-ADB"
+    ]).has(temporalHermesAndroidPreparation.status)) {
+      errors.push("Hermes Android preparation status is unsupported");
     }
     if (
       temporalHermesAndroidPreparation.runtimeExecution !== "NOT-EXECUTED" ||
@@ -125,8 +128,11 @@ export function validateWp002State(state) {
     ) {
       errors.push("Hermes Android preparation must preserve the exact five-vector Node corpus hash");
     }
-    if (temporalHermesAndroidPreparation.osTzdbDivergence !== "NOT-EXECUTED") {
-      errors.push("Hermes Android preparation must keep the separate OS-TZDB scenario NOT-EXECUTED");
+    if (!new Set([
+      "NOT-EXECUTED",
+      "PARTIAL-LOCAL-SYNTHETIC-ORACLE"
+    ]).has(temporalHermesAndroidPreparation.osTzdbDivergence)) {
+      errors.push("Hermes Android preparation has an unsupported separate OS-TZDB state");
     }
     if (temporalHermesAndroidPreparation.ios !== "BLOCKED") {
       errors.push("Hermes Android preparation must keep Hermes iOS BLOCKED");
@@ -136,6 +142,43 @@ export function validateWp002State(state) {
     }
     if (temporalHermesAndroidPreparation.fallbackActivated !== false) {
       errors.push("Hermes Android preparation cannot activate fallback");
+    }
+    if (
+      temporalHermesAndroidPreparation.status === "READY-PHYSICAL-EXECUTION-BLOCKED-BY-ADB" &&
+      (
+        temporalHermesAndroidPreparation.humanGate !== "APPROVED" ||
+        temporalHermesAndroidPreparation.executorConnection !== "ABSENT"
+      )
+    ) {
+      errors.push("Hermes Android blocked execution must retain the approved gate and absent ADB channel");
+    }
+  }
+
+  const osTzdb = state?.temporalOsTzdbDivergence;
+  if (osTzdb) {
+    if (
+      osTzdb.status !== "PARTIAL-LOCAL-EVIDENCE" ||
+      osTzdb.syntheticOsOracle !== true ||
+      osTzdb.actualOsTzdbMutated !== false ||
+      osTzdb.divergenceDetected !== true ||
+      osTzdb.authority !== "VERSIONED_BUNDLE" ||
+      osTzdb.canonicalPromotion !== false ||
+      osTzdb.fallbackActivated !== false
+    ) {
+      errors.push("OS-TZDB partial evidence cannot be broadened beyond the controlled local scenario");
+    }
+  }
+
+  const cryptoReadiness = state?.cryptoStaticReadiness;
+  if (cryptoReadiness) {
+    if (
+      cryptoReadiness.status !== "STATIC-READINESS-ONLY" ||
+      cryptoReadiness.val003RuntimeProtocolExecuted !== false ||
+      cryptoReadiness.val004AccountLifecycleExecuted !== false ||
+      cryptoReadiness.canonicalPromotion !== false ||
+      cryptoReadiness.fallbackActivated !== false
+    ) {
+      errors.push("VAL-003/004 static readiness cannot be promoted to runtime protocol evidence");
     }
   }
 

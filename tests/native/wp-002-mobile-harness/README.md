@@ -58,3 +58,37 @@ exit $runnerExit
 ```
 
 The preliminary checksum command is an operator check; the runner independently compares the CI metadata SHA-256/size to the local APK, pulls the installed `base.apk`, compares its bytes, and records every link in the JSON. If a link or an ADB command fails, stdout remains valid `ABORTED_DIAGNOSTIC` JSON and the process exits nonzero. An exit code does not promote `SP-007` or `VAL-001`. Preserve the output without editing and submit it for independent review. Query, scroll, kill/restart, and specific heap budgets remain `NOT-PROPOSED`; iOS remains `BLOCKED`.
+
+## Hermes Android VAL-006 capture
+
+The Hermes gate uses a distinct runner and does not repeat the formal 30+30 performance protocol. Check out the exact artifact head, install its APK, and run:
+
+```powershell
+$artifactDir = Resolve-Path .\wp-002-android-probe
+$apk = Join-Path $artifactDir "app-release.apk"
+$apkMetadata = Join-Path $artifactDir "APK_PROVENANCE.json"
+$hermesMetadata = Join-Path $artifactDir "HERMES_ANDROID_PROVENANCE.json"
+
+& C:\platform-tools\adb.exe -s $env:FIT_S23_ADB_SERIAL install --replace $apk
+if ($LASTEXITCODE -ne 0) { throw "APK installation failed" }
+
+$reportLines = & node tests/temporal/wp-002/capture-hermes-android.mjs `
+  --adb C:\platform-tools\adb.exe `
+  --serial $env:FIT_S23_ADB_SERIAL `
+  --repo-root . `
+  --apk $apk `
+  --apk-metadata $apkMetadata `
+  --hermes-metadata $hermesMetadata `
+  --node-report docs/evidence/wp-002/raw/VAL006_NODE24_PARTIAL.json
+$runnerExit = $LASTEXITCODE
+$reportText = ($reportLines -join [Environment]::NewLine) + [Environment]::NewLine
+[IO.File]::WriteAllText(
+  (Join-Path (Get-Location) "val006-hermes-android-s23.json"),
+  $reportText,
+  [Text.UTF8Encoding]::new($false)
+)
+Write-Host "Hermes runner exit code: $runnerExit"
+exit $runnerExit
+```
+
+The runner rejects execution unless the checkout, both CI provenance records, local APK, installed APK, package, S23/API row, Hermes runtime proof, rule-base hash, corpus hash, and all five Node↔Hermes vector fields agree. The serial is represented only by a truncated SHA-256 reference. Output remains a human-review candidate and cannot promote canonical VAL-006.

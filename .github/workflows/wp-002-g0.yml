@@ -35,6 +35,15 @@ jobs:
         run: npm ci --ignore-scripts
       - name: Verify WP-002 state and guardrails
         run: npm run verify:wp002
+      - name: Reproduce local partial evidence
+        run: |
+          npm run --silent probe:val006:os-tzdb > /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json
+          npm run --silent probe:crypto-readiness > /tmp/VAL003_VAL004_STATIC_READINESS.json
+          cmp /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json docs/evidence/wp-002/raw/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json
+          cmp /tmp/VAL003_VAL004_STATIC_READINESS.json docs/evidence/wp-002/raw/VAL003_VAL004_STATIC_READINESS.json
+          echo "08678e357ae903c6e188bd71945fd6768138540806260bb50a02306a9a36b6ab  /tmp/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json" | sha256sum --check
+          echo "98c64c906b43377dfe6f55a06894e1d80558c76917940e8737b666d03607472d  /tmp/VAL003_VAL004_STATIC_READINESS.json" | sha256sum --check
+          echo "ffc27cd2de0de43180f11d02fac07fbae2eb5ed3ec3180d1d873a933a90de0f6  docs/evidence/wp-002/SP007_S23_BUDGETS.json" | sha256sum --check
       - name: Install locked disposable harness
         working-directory: tests/native/wp-002-mobile-harness
         run: npm ci --ignore-scripts

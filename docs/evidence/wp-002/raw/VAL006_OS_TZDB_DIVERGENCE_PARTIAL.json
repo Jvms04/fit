@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "wp": "WP-002",
+  "validation": "VAL-006",
+  "classification": "VAL006_OS_TZDB_DIVERGENCE_PARTIAL_EVIDENCE",
+  "runtime": {
+    "family": "Node",
+    "version": "v24.19.0"
+  },
+  "ruleBase": {
+    "id": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "bundleSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "tzdbVersion": "2026c",
+    "authority": "VERSIONED_BUNDLE"
+  },
+  "fixture": {
+    "id": "synthetic-os-tzdb-divergence",
+    "path": "tests/temporal/wp-002/fixtures/os-tzdb-divergence.json",
+    "sizeBytes": 417,
+    "sha256": "44a29708e16ef3f33be69e40f61a19dfd816158569ce26ccc142f3c290d59058",
+    "hashVerified": true
+  },
+  "syntheticOsOracle": true,
+  "actualOsTzdbMutated": false,
+  "networkRequired": false,
+  "scenario": {
+    "classification": "OS_TZDB_DIVERGENCE_DETECTED",
+    "divergenceDetected": true,
+    "authority": "VERSIONED_BUNDLE",
+    "bundledRuleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    "osRuleBaseId": "os-tzdb-synthetic-divergent-v1",
+    "selected": {
+      "classification": "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+      "requestedLocal": "2026-03-08T02:30:00",
+      "resolvedLocal": "2026-03-08T03:00:00",
+      "instant": "2026-03-08T07:00:00Z",
+      "offset": "-04:00"
+    },
+    "osObserved": {
+      "classification": "EXACT",
+      "requestedLocal": "2026-03-08T02:30:00",
+      "resolvedLocal": "2026-03-08T02:30:00",
+      "instant": "2026-03-08T07:30:00Z",
+      "offset": "-05:00"
+    },
+    "canonicalPromotion": false
+  },
+  "canonicalPromotion": false,
+  "automaticPromotion": false,
+  "fallbackActivated": false,
+  "limitations": [
+    "controlled divergent OS oracle; the host OS TZDB was not mutated",
+    "does not replace Hermes Android or Hermes iOS runtime evidence",
+    "does not complete canonical VAL-006"
+  ]
+}

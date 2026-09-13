@@ -381,3 +381,82 @@ test("rejects Hermes preparation that fabricates execution, promotion, or a diff
   assert.ok(errors.some((error) => error.includes("canonical promotion")));
   assert.ok(errors.some((error) => error.includes("fallback")));
 });
+
+test("accepts approved Hermes preparation blocked only by the absent executor ADB channel", () => {
+  const state = structuredClone(baseState);
+  state.protocols.find(({ id }) => id === "VAL-006").status = "PARTIAL";
+  state.temporalNode24 = {
+    status: "PARTIAL-EVIDENCE",
+    runtime: "Node 24",
+    dependencies: {
+      temporalPolyfill: "0.5.1",
+      momentTimezone: "0.6.3",
+      tzdb: "2026c"
+    },
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    vectors: { matched: 5, total: 5 },
+    skewDetected: true,
+    consolidatedPreserved: true,
+    futureUnconsolidatedReexpanded: true,
+    canonicalPromotion: false,
+    fallbackActivated: false,
+    hermes: { android: "NOT-EXECUTED", ios: "BLOCKED" }
+  };
+  state.temporalHermesAndroidPreparation = {
+    status: "READY-PHYSICAL-EXECUTION-BLOCKED-BY-ADB",
+    humanGate: "APPROVED",
+    executorConnection: "ABSENT",
+    runtimeExecution: "NOT-EXECUTED",
+    runtimeProof: "PENDING_PHYSICAL_EXECUTION",
+    ruleBaseId: "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    ruleBaseSha256: "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    corpusSha256: "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141",
+    vectors: { prepared: 5, executed: 0 },
+    osTzdbDivergence: "PARTIAL-LOCAL-SYNTHETIC-ORACLE",
+    ios: "BLOCKED",
+    canonicalPromotion: false,
+    fallbackActivated: false
+  };
+  state.temporalOsTzdbDivergence = {
+    status: "PARTIAL-LOCAL-EVIDENCE",
+    syntheticOsOracle: true,
+    actualOsTzdbMutated: false,
+    divergenceDetected: true,
+    authority: "VERSIONED_BUNDLE",
+    canonicalPromotion: false,
+    fallbackActivated: false
+  };
+  state.cryptoStaticReadiness = {
+    status: "STATIC-READINESS-ONLY",
+    val003RuntimeProtocolExecuted: false,
+    val004AccountLifecycleExecuted: false,
+    canonicalPromotion: false,
+    fallbackActivated: false
+  };
+
+  assert.deepEqual(validateWp002State(state), []);
+});
+
+test("rejects broadening static crypto or synthetic OS-TZDB evidence", () => {
+  const state = structuredClone(baseState);
+  state.cryptoStaticReadiness = {
+    status: "PASS",
+    val003RuntimeProtocolExecuted: true,
+    val004AccountLifecycleExecuted: true,
+    canonicalPromotion: true,
+    fallbackActivated: true
+  };
+  state.temporalOsTzdbDivergence = {
+    status: "PASS",
+    syntheticOsOracle: false,
+    actualOsTzdbMutated: true,
+    divergenceDetected: true,
+    authority: "SYSTEM_TZDB",
+    canonicalPromotion: true,
+    fallbackActivated: true
+  };
+
+  const errors = validateWp002State(state);
+  assert.ok(errors.some((error) => error.includes("static readiness")));
+  assert.ok(errors.some((error) => error.includes("OS-TZDB")));
+});

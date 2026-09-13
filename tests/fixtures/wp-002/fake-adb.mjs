@@ -82,6 +82,10 @@ if (command[0] === "logcat") {
           rowCount, readyMs: 55
         }) + "\n"
       );
+      if (process.env.FAKE_ADB_HERMES_REPORT) {
+        const hermesReport = readFileSync(process.env.FAKE_ADB_HERMES_REPORT, "utf8").trim();
+        process.stdout.write(`09-10 ReactNativeJS: I [FIT_WP002_VAL006_HERMES] ${hermesReport}\n`);
+      }
     }
   }
   process.exit(0);
@@ -140,7 +144,7 @@ if (joined.startsWith("shell dumpsys activity activities ")) {
   process.exit(0);
 }
 if (joined.startsWith("shell am start -W -n ")) {
-  if (command.includes("provenance-preflight")) {
+  if (command.includes("provenance-preflight") || command.includes("val006-hermes-runtime")) {
     state.preflightStarted = true;
     state.nextLaunchState = "COLD";
     state.activityTopResumed = true;

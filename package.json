@@ -11,6 +11,8 @@
     "test:governance": "node --test tooling/governance/tests/*.test.mjs",
     "test:wp002": "node --test tests/unit/wp-002/*.test.mjs",
     "probe:val006:node24": "node tests/temporal/wp-002/run-node-val006.mjs",
+    "probe:val006:os-tzdb": "node tests/temporal/wp-002/run-os-tzdb-divergence.mjs",
+    "probe:crypto-readiness": "node tests/crypto/wp-002/inspect-readiness.mjs",
     "verify:wp001": "npm run test:governance && npm run check:governance",
     "verify:wp002": "npm run test:governance && npm run test:wp002 && npm run check:governance && npm run check:wp002-state"
   },

@@ -94,3 +94,32 @@ test("the synthetic future revision is a versioned asset verified by its byte ha
   assert.equal(revision.effectiveFromLocal, "2027-01-01T00:00:00");
   assert.equal(revision.revisedOffset, "-04:00");
 });
+
+test("a deliberately divergent OS-TZDB oracle cannot replace the versioned bundle result", async () => {
+  assert.equal(typeof implementation.loadOsTzdbDivergence, "function");
+  assert.equal(typeof implementation.evaluateOsTzdbDivergence, "function");
+
+  const fixture = await implementation.loadOsTzdbDivergence();
+  const bundled = {
+    classification: "NONEXISTENT_ADJUSTED_TO_NEXT_VALID",
+    requestedLocal: "2026-03-08T02:30:00",
+    resolvedLocal: "2026-03-08T03:00:00",
+    instant: "2026-03-08T07:00:00Z",
+    offset: "-04:00"
+  };
+  const result = implementation.evaluateOsTzdbDivergence({
+    bundled,
+    bundledRuleBaseId:
+      "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
+    fixture
+  });
+
+  assert.equal(fixture.hashVerified, true);
+  assert.match(fixture.assetSha256, /^[a-f0-9]{64}$/);
+  assert.equal(result.classification, "OS_TZDB_DIVERGENCE_DETECTED");
+  assert.equal(result.divergenceDetected, true);
+  assert.equal(result.authority, "VERSIONED_BUNDLE");
+  assert.deepEqual(result.selected, bundled);
+  assert.notDeepEqual(result.osObserved, bundled);
+  assert.equal(result.canonicalPromotion, false);
+});

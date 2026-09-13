@@ -4,6 +4,9 @@ import { readFile } from "node:fs/promises";
 
 const FUTURE_REVISION_URL = new URL("../fixtures/synthetic-future-revision.json", import.meta.url);
 const EXPECTED_FUTURE_REVISION_SHA256 = "9f2e71444ea8d2541702843c386032e62f8a5b9f10360440fd9fdfe2a779feaa";
+const OS_TZDB_DIVERGENCE_URL = new URL("../fixtures/os-tzdb-divergence.json", import.meta.url);
+const EXPECTED_OS_TZDB_DIVERGENCE_SHA256 =
+  "44a29708e16ef3f33be69e40f61a19dfd816158569ce26ccc142f3c290d59058";
 
 export async function loadSyntheticFutureRevision() {
   const bytes = await readFile(FUTURE_REVISION_URL);
@@ -21,6 +24,50 @@ export async function loadSyntheticFutureRevision() {
     assetSha256,
     ruleBaseId: `iana-synthetic-future+sha256:${assetSha256}`,
     hashVerified: true
+  };
+}
+
+export async function loadOsTzdbDivergence() {
+  const bytes = await readFile(OS_TZDB_DIVERGENCE_URL);
+  const assetSha256 = createHash("sha256").update(bytes).digest("hex");
+  if (assetSha256 !== EXPECTED_OS_TZDB_DIVERGENCE_SHA256) {
+    throw new Error(
+      `OS-TZDB divergence fixture hash mismatch: expected ${EXPECTED_OS_TZDB_DIVERGENCE_SHA256}, received ${assetSha256}`
+    );
+  }
+  const fixture = JSON.parse(bytes.toString("utf8"));
+  if (
+    fixture.schemaVersion !== 1 ||
+    fixture.id !== "synthetic-os-tzdb-divergence" ||
+    fixture.vectorId !== "ny-gap-next-valid" ||
+    typeof fixture.osRuleBaseId !== "string" ||
+    !fixture.osObserved
+  ) {
+    throw new Error("OS-TZDB divergence fixture contract is invalid");
+  }
+  return {
+    ...fixture,
+    assetPath: OS_TZDB_DIVERGENCE_URL,
+    assetSizeBytes: bytes.length,
+    assetSha256,
+    hashVerified: true
+  };
+}
+
+export function evaluateOsTzdbDivergence({ bundled, bundledRuleBaseId, fixture }) {
+  const divergenceDetected = JSON.stringify(bundled) !== JSON.stringify(fixture.osObserved);
+  if (!divergenceDetected) {
+    throw new Error("controlled OS-TZDB oracle is not divergent from the versioned bundle");
+  }
+  return {
+    classification: "OS_TZDB_DIVERGENCE_DETECTED",
+    divergenceDetected: true,
+    authority: "VERSIONED_BUNDLE",
+    bundledRuleBaseId,
+    osRuleBaseId: fixture.osRuleBaseId,
+    selected: bundled,
+    osObserved: fixture.osObserved,
+    canonicalPromotion: false
   };
 }
 

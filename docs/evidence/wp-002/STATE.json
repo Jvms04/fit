@@ -2,13 +2,13 @@
   "schemaVersion": 1,
   "wp": "WP-002",
   "increment": "G0 / INC-P0-01",
-  "status": "In Progress",
+  "status": "In Review",
   "val025": "NOT-EXECUTED",
   "protocols": [
-    { "id": "SP-007", "status": "IN-PROGRESS" },
-    { "id": "VAL-001", "status": "NOT-EXECUTED" },
-    { "id": "VAL-003", "status": "NOT-EXECUTED" },
-    { "id": "VAL-004", "status": "NOT-EXECUTED" },
+    { "id": "SP-007", "status": "PARTIAL" },
+    { "id": "VAL-001", "status": "PARTIAL" },
+    { "id": "VAL-003", "status": "PARTIAL" },
+    { "id": "VAL-004", "status": "PARTIAL" },
     { "id": "VAL-006", "status": "PARTIAL" },
     { "id": "VAL-011", "status": "BLOCKED" },
     { "id": "VAL-016@P0", "status": "INCONCLUSIVE" }
@@ -37,18 +37,60 @@
     "hermes": { "android": "NOT-EXECUTED", "ios": "BLOCKED" }
   },
   "temporalHermesAndroidPreparation": {
-    "status": "PREPARED-AWAITING-HUMAN-GATE",
+    "status": "READY-PHYSICAL-EXECUTION-BLOCKED-BY-ADB",
+    "humanGate": "APPROVED",
+    "executorConnection": "ABSENT",
     "artifactName": "wp-002-android-probe",
+    "captureRunner": "tests/temporal/wp-002/capture-hermes-android.mjs",
     "runtimeExecution": "NOT-EXECUTED",
     "runtimeProof": "PENDING_PHYSICAL_EXECUTION",
     "ruleBaseId": "iana-2026c+moment-timezone-0.6.3+sha256:43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
     "ruleBaseSha256": "43f7878a298740ff6acabb9c726c7e5431a94bdca79abad274a6fe6e355bfe81",
     "corpusSha256": "58eb313e1643048b7ac4840e5fa041d025b87d233d325920572951851a0c8141",
     "vectors": { "prepared": 5, "executed": 0 },
-    "osTzdbDivergence": "NOT-EXECUTED",
+    "osTzdbDivergence": "PARTIAL-LOCAL-SYNTHETIC-ORACLE",
     "ios": "BLOCKED",
     "canonicalPromotion": false,
     "fallbackActivated": false
+  },
+  "temporalOsTzdbDivergence": {
+    "status": "PARTIAL-LOCAL-EVIDENCE",
+    "report": "raw/VAL006_OS_TZDB_DIVERGENCE_PARTIAL.json",
+    "reportSizeBytes": 1972,
+    "reportSha256": "08678e357ae903c6e188bd71945fd6768138540806260bb50a02306a9a36b6ab",
+    "fixture": "tests/temporal/wp-002/fixtures/os-tzdb-divergence.json",
+    "fixtureSizeBytes": 417,
+    "fixtureSha256": "44a29708e16ef3f33be69e40f61a19dfd816158569ce26ccc142f3c290d59058",
+    "syntheticOsOracle": true,
+    "actualOsTzdbMutated": false,
+    "divergenceDetected": true,
+    "authority": "VERSIONED_BUNDLE",
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
+  "cryptoStaticReadiness": {
+    "status": "STATIC-READINESS-ONLY",
+    "report": "raw/VAL003_VAL004_STATIC_READINESS.json",
+    "reportSizeBytes": 1170,
+    "reportSha256": "98c64c906b43377dfe6f55a06894e1d80558c76917940e8737b666d03607472d",
+    "sqlCipherBuildConfigured": true,
+    "secureStoreConfigured": true,
+    "csprngConfigured": true,
+    "mathRandomUsedForKeys": false,
+    "androidBackupDisabled": true,
+    "val003RuntimeProtocolExecuted": false,
+    "val004AccountLifecycleExecuted": false,
+    "canonicalPromotion": false,
+    "fallbackActivated": false
+  },
+  "hostReadiness": {
+    "report": "raw/HOST_ENVIRONMENT.json",
+    "reportSizeBytes": 1514,
+    "reportSha256": "413ecd8f5a90e14f474f32d81bec3faa11d15f9795d10a3de2d25ba194a0bf2b",
+    "adbDevices": 0,
+    "adbMdnsServices": 0,
+    "dockerOrEquivalent": "ABSENT",
+    "localPostgresql17Runner": "ABSENT"
   },
   "platforms": {
     "androidPhysical": {
@@ -190,6 +232,9 @@
   },
   "externalResources": {
     "supabase": "NOT-PROVISIONED-BY-WP-002",
-    "gcp": "NOT-PROVISIONED-BY-WP-002"
+    "gcp": "NOT-PROVISIONED-BY-WP-002",
+    "dockerOrEquivalent": "ABSENT",
+    "twoSyntheticAccounts": "ABSENT",
+    "localPostgresql17Runner": "ABSENT"
   }
 }
