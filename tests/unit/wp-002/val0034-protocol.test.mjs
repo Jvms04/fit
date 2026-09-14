@@ -14,6 +14,7 @@ import {
   validateVal0034Report
 } from "../../native/wp-002-mobile-harness/val0034/protocol.mjs";
 import {
+  captureProtocolLogcat,
   classifyRecoverySamples,
   classifyRekeyInterruptionEvidence
 } from "../../native/wp-002-mobile-harness/val0034/run-val0034-android.mjs";
@@ -277,4 +278,16 @@ test("runner refuses interruption measurement when completion appears after forc
     }),
     "INCONCLUSIVE"
   );
+});
+
+test("bounds the real logcat collection path while preserving all protocol markers", () => {
+  const fakeAdb = join(process.cwd(), "tests/fixtures/wp-002/fake-logcat-adb.mjs");
+  const captured = captureProtocolLogcat(fakeAdb, "serial-raw-must-not-appear", "collect-screen-unlock-log");
+
+  assert.equal(captured.exitCode, 0);
+  assert.match(captured.stdout, /\[FIT_VAL0034\]/);
+  assert.match(captured.stdout, /\[FIT_VAL0034_REKEY_STARTED\]/);
+  assert.match(captured.stdout, /\[FIT_VAL0034_REKEY_COMPLETED\]/);
+  assert.match(captured.stdout, /\[FIT_VAL0034_APPSTATE\]/);
+  assert.ok(captured.stdout.length < 4096, "marker-scoped capture must not retain unbounded logcat noise");
 });
