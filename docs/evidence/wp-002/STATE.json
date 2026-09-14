@@ -236,5 +236,49 @@
     "dockerOrEquivalent": "ABSENT",
     "twoSyntheticAccounts": "ABSENT",
     "localPostgresql17Runner": "ABSENT"
-  }
+  },
+  "val003Val004AndroidParcel": {
+  "status": "ACCEPTED-PARTIAL",
+  "sourceHead": "5b008e9b6782994359d399f5998c9ffd1bb2234e",
+  "device": "SM-S911B",
+  "android": "16",
+  "apiLevel": 36,
+  "classification": "PARTIAL",
+  "error": null,
+  "reportCustody": "HUMAN-SIDE-ONLY",
+  "reportSizeBytes": 24327,
+  "reportSha256": "3B9A722C56F609707BD6B6DB624700E539B047B9320A6900A4CB85C9E3AFCA7A",
+  "apkSha256": "07412e3891090700f77b1f52a0cd1325c1243a1edda180c731c86240d33a06b6",
+  "minimizedEvidence": "raw/VAL003_VAL004_ANDROID_S23_PARTIAL_MINIMIZED.md",
+  "measured": [
+    "create-db-wal-shm-canaries",
+    "extract-db-wal-shm",
+    "wrong-key",
+    "rekey",
+    "securestore-keystore",
+    "csprng",
+    "restart-process",
+    "restart-recovery",
+    "integrity-after-recovery"
+  ],
+  "inconclusive": [
+    "rekey-interruption",
+    "screen-lock-sealed-state",
+    "biometric-change"
+  ],
+  "rekeyInterruption": {
+    "status": "INCONCLUSIVE",
+    "completionObservedBeforeForceStop": true,
+    "completionObservedAfterForceStop": true
+  },
+  "accountIsolation": "NOT_EVALUATED_WITHOUT_AUTH_A_B",
+  "flags": {
+    "canonicalPromotion": false,
+    "formalValidation": false,
+    "automaticPromotion": false,
+    "fallbackActivated": false
+  },
+  "canonicalPromotion": false,
+  "s23Rerun": "NOT-EXECUTED"
+}
 }
