@@ -118,6 +118,21 @@ function markerJson(raw, marker) {
   return null;
 }
 
+function markerValues(raw, marker) {
+  return String(raw)
+    .split(/\r?\n/u)
+    .filter((line) => line.includes(marker))
+    .flatMap((line) => {
+      const start = line.indexOf("{", line.indexOf(marker));
+      if (start < 0) return [];
+      try {
+        return [JSON.parse(line.slice(start))];
+      } catch {
+        return [];
+      }
+    });
+}
+
 function run() {
   const values = parseArgs(process.argv.slice(2));
   const adb = values.get("adb") ?? process.env.ADB_BIN ?? "adb";
@@ -198,6 +213,7 @@ function run() {
     const valReport = markerJson(logcat, "[FIT_VAL0034]");
     report.raw.appMarkers.push(...logcat.split(/\r?\n/u).filter((line) => line.includes("[FIT_VAL0034]")));
     if (valReport?.samples) report.samples.push(...valReport.samples);
+    const initialProcessInstanceId = valReport?.processInstanceId ?? null;
 
     // Controlled interruption is a separate, explicitly diagnostic operation.
     adbCall(["shell", "logcat", "-c"], "logcat-clear-rekey");
@@ -214,18 +230,51 @@ function run() {
     }
     if (interruptionObserved) {
       adbCall(["shell", "am", "force-stop", PACKAGE_NAME], "force-stop-during-rekey");
-      report.samples.push({ operation: "rekey-interruption", classification: "INCONCLUSIVE", detail: { interruptionObserved: true, recoveryRequiresRestart: true } });
+      adbCall(["shell", "logcat", "-c"], "logcat-clear-recovery");
+      adbCall(["shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", "fit-wp002://val0034/recovery", ACTIVITY], "launch-recovery");
+      adbCall(["shell", "sleep", "3"], "await-recovery");
+      const recoveryLog = adbCall(["shell", "logcat", "-d", "-v", "brief"], "collect-recovery-log").stdout;
+      const recoveryReport = markerJson(recoveryLog, "[FIT_VAL0034]");
+      report.raw.appMarkers.push(...recoveryLog.split(/\r?\n/u).filter((line) => line.includes("[FIT_VAL0034]")));
+      const processRestarted = Boolean(initialProcessInstanceId && recoveryReport?.processInstanceId && initialProcessInstanceId !== recoveryReport.processInstanceId);
+      const recoveryVerified = recoveryReport?.recovery?.recoveryVerified === true;
+      report.samples = report.samples.filter((sample) => ![
+        "rekey-interruption", "restart-process", "restart-recovery", "integrity-after-recovery"
+      ].includes(sample.operation));
+      report.samples.push({
+        operation: "rekey-interruption",
+        classification: recoveryVerified ? "MEASURED" : "INCONCLUSIVE",
+        detail: { interruptionObserved: true, markerPhase: "rekey-started", forceStopped: true, recoveryVerified }
+      });
+      report.samples.push({
+        operation: "restart-process",
+        classification: processRestarted && recoveryVerified ? "MEASURED" : "INCONCLUSIVE",
+        detail: { processRestarted, initialProcessInstanceId: initialProcessInstanceId ? "present" : "missing", recoveryProcessInstanceId: recoveryReport?.processInstanceId ? "present" : "missing" }
+      });
+      if (recoveryReport?.samples) report.samples.push(...recoveryReport.samples.filter((sample) => sample.operation !== "restart-process"));
+      report.recovery = recoveryReport?.recovery ?? { recoveryVerified: false, processRestarted };
     } else {
+      report.samples = report.samples.filter((sample) => sample.operation !== "rekey-interruption");
       report.samples.push({ operation: "rekey-interruption", classification: "DIAGNOSTIC_INVALID", detail: { interruptionObserved: false } });
     }
 
     // Lock/unlock is deliberately recorded as a physical-state observation, never inferred.
+    adbCall(["shell", "logcat", "-c"], "logcat-clear-screen-lock");
     adbCall(["shell", "input", "keyevent", "KEYCODE_POWER"], "screen-lock");
     adbCall(["shell", "sleep", "1"], "await-screen-lock");
     const lockLog = adbCall(["shell", "logcat", "-d", "-v", "brief"], "collect-screen-lock-log").stdout;
-    report.raw.appMarkers.push(...lockLog.split(/\r?\n/u).filter((line) => line.includes("[FIT_VAL0034_APPSTATE]")));
-    report.samples.push({ operation: "screen-lock-sealed-state", classification: "INCONCLUSIVE", detail: { requiresManualUnlockVerification: true } });
     adbCall(["shell", "input", "keyevent", "KEYCODE_POWER"], "screen-unlock-request");
+    adbCall(["shell", "sleep", "1"], "await-screen-unlock");
+    const unlockLog = adbCall(["shell", "logcat", "-d", "-v", "brief"], "collect-screen-unlock-log").stdout;
+    const lifecycleStates = [...markerValues(lockLog, "[FIT_VAL0034_APPSTATE]"), ...markerValues(unlockLog, "[FIT_VAL0034_APPSTATE]")];
+    report.raw.appMarkers.push(...[lockLog, unlockLog].flatMap((raw) => String(raw).split(/\r?\n/u).filter((line) => line.includes("[FIT_VAL0034_APPSTATE]"))));
+    const sealedIndex = lifecycleStates.findIndex((entry) => entry?.sealed === true && entry?.state !== "active");
+    const activeAfterSeal = sealedIndex >= 0 && lifecycleStates.slice(sealedIndex + 1).some((entry) => entry?.state === "active" && entry?.sealed === false);
+    report.samples.push({
+      operation: "screen-lock-sealed-state",
+      classification: sealedIndex >= 0 && activeAfterSeal ? "MEASURED" : "INCONCLUSIVE",
+      detail: { sealedObserved: sealedIndex >= 0, activeAfterUnlockObserved: activeAfterSeal }
+    });
 
     report.classification = "PARTIAL";
     writeFileSync(outputPath, `${JSON.stringify(report, null, 2)}\n`, "utf8");

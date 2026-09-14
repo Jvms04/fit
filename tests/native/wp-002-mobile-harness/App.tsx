@@ -85,7 +85,7 @@ async function runDatabaseCharacterization(): Promise<ProbeResult> {
 
 export default function App() {
   const [result, setResult] = useState<ProbeResult | null>(null);
-  const [val0034Mode, setVal0034Mode] = useState<"run" | "rekey-interruption" | null>(null);
+  const [val0034Mode, setVal0034Mode] = useState<"run" | "rekey-interruption" | "recovery" | null>(null);
   const [linkResolved, setLinkResolved] = useState(false);
   const items = useMemo(
     () => Array.from({ length: SYNTHETIC_ROW_COUNT }, (_, index) => `synthetic-row-${index + 1}`),
@@ -102,6 +102,8 @@ export default function App() {
         const operation = (url.slice(prefix.length).split(/[?#]/u)[0] ?? "").replace(/^\/+/, "");
         if (operation === "val0034/rekey-interruption") {
           setVal0034Mode("rekey-interruption");
+        } else if (operation === "val0034/recovery") {
+          setVal0034Mode("recovery");
         } else if (operation === "val0034/run") {
           setVal0034Mode("run");
         }

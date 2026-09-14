@@ -1,4 +1,5 @@
 import * as Crypto from "expo-crypto";
+import { File } from "expo-file-system";
 import * as FileSystem from "expo-file-system/legacy";
 import * as SecureStore from "expo-secure-store";
 import * as SQLite from "expo-sqlite";
@@ -9,6 +10,7 @@ const KEY_REF = "wp002.val0034.sqlcipher.key";
 const PENDING_REKEY_REF = "wp002.val0034.pending-rekey";
 const SYNTHETIC_ROW_COUNT = 1_000;
 const PACKAGE_NAME = "com.fit.wp002probe";
+const PROCESS_INSTANCE_ID = Crypto.randomUUID();
 
 export type Val0034Classification =
   | "MEASURED"
@@ -57,6 +59,66 @@ async function openEncrypted(key: string, useNewConnection = false): Promise<SQL
   return database;
 }
 
+async function verifyKeyAgainstDatabase(key: string): Promise<{ canary: boolean; integrity: string }> {
+  let database: SQLite.SQLiteDatabase | null = null;
+  try {
+    database = await openEncrypted(key, true);
+    return { canary: await queryCanary(database), integrity: await integrity(database) };
+  } catch {
+    return { canary: false, integrity: "unavailable" };
+  } finally {
+    await database?.closeAsync().catch(() => undefined);
+  }
+}
+
+type CustodyRecovery = {
+  key: string | null;
+  activeKeyRef: "active" | "pending" | null;
+  pendingKeyPresent: boolean;
+  status: "NO_KEY" | "ACTIVE_VALID" | "COMMITTED_PENDING" | "PENDING_RECOVERY" | "INVALID";
+  canary: boolean;
+  integrity: string;
+};
+
+async function recoverKeyCustody(): Promise<CustodyRecovery> {
+  const activeKey = await SecureStore.getItemAsync(KEY_REF);
+  const pendingKey = await SecureStore.getItemAsync(PENDING_REKEY_REF);
+  if (!activeKey && !pendingKey) {
+    return { key: null, activeKeyRef: null, pendingKeyPresent: false, status: "NO_KEY", canary: false, integrity: "missing" };
+  }
+
+  if (pendingKey) {
+    const pendingResult = await verifyKeyAgainstDatabase(pendingKey);
+    if (pendingResult.canary && pendingResult.integrity === "ok") {
+      await SecureStore.setItemAsync(KEY_REF, pendingKey, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+      });
+      await SecureStore.deleteItemAsync(PENDING_REKEY_REF);
+      return {
+        key: pendingKey,
+        activeKeyRef: "pending",
+        pendingKeyPresent: false,
+        status: "COMMITTED_PENDING",
+        ...pendingResult
+      };
+    }
+  }
+
+  if (activeKey) {
+    const activeResult = await verifyKeyAgainstDatabase(activeKey);
+    if (activeResult.canary && activeResult.integrity === "ok") {
+      return {
+        key: activeKey,
+        activeKeyRef: "active",
+        pendingKeyPresent: Boolean(pendingKey),
+        status: pendingKey ? "PENDING_RECOVERY" : "ACTIVE_VALID",
+        ...activeResult
+      };
+    }
+  }
+  return { key: null, activeKeyRef: null, pendingKeyPresent: Boolean(pendingKey), status: "INVALID", canary: false, integrity: "invalid" };
+}
+
 async function queryCanary(database: SQLite.SQLiteDatabase): Promise<boolean> {
   const result = await database.getFirstAsync<{ canaryCount: number }>(
     "SELECT COUNT(*) AS canaryCount FROM probe_canaries WHERE name = 'fit-val003-plaintext-canary' AND value = 'fit-val003-plaintext-canary';"
@@ -70,7 +132,8 @@ async function integrity(database: SQLite.SQLiteDatabase): Promise<string> {
 }
 
 async function prepareDatabase(): Promise<DbContext> {
-  const key = await getOrCreateKey();
+  const custody = await recoverKeyCustody();
+  const key = custody.key ?? await getOrCreateKey();
   const database = await openEncrypted(key);
   await database.execAsync("PRAGMA journal_mode = WAL; PRAGMA synchronous = FULL;");
   await database.execAsync(`
@@ -108,10 +171,20 @@ async function inspectDatabaseFiles(databasePath: string) {
   for (const path of files) {
     try {
       const info = await FileSystem.getInfoAsync(fileUri(path));
+      let sha256: string | null = null;
+      if (info.exists) {
+        try {
+          const bytes = await new File(fileUri(path)).bytes();
+          sha256 = toHex(new Uint8Array(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes)));
+        } catch {
+          sha256 = null;
+        }
+      }
       inspected.push({
         name: path.split("/").pop() ?? "unknown",
         exists: info.exists,
-        size: "size" in info ? info.size ?? null : null
+        size: "size" in info ? info.size ?? null : null,
+        sha256
       });
     } catch (error: unknown) {
       inspected.push({
@@ -139,10 +212,15 @@ async function runVal003(): Promise<Val0034Sample[]> {
       })
     );
 
+    const extractedFiles = await inspectDatabaseFiles(databasePath);
+    const extractionMeasured = extractedFiles.length === 3 && extractedFiles.every(
+      (file) => file.exists === true && typeof file.sha256 === "string" && Number.isFinite(file.size)
+    );
     results.push(
-      sample("extract-db-wal-shm", "MEASURED", {
-        files: await inspectDatabaseFiles(databasePath),
-        note: "metadata only; external pull remains runner/device dependent"
+      sample("extract-db-wal-shm", extractionMeasured ? "MEASURED" : "INCONCLUSIVE", {
+        files: extractedFiles,
+        bytesVerified: extractionMeasured,
+        note: extractionMeasured ? "encrypted bytes hashed in-app" : "release harness did not expose all file bytes"
       })
     );
 
@@ -163,11 +241,30 @@ async function runVal003(): Promise<Val0034Sample[]> {
     await database.closeAsync();
     const reopened = await openEncrypted(newKey, true);
     const recovered = await queryCanary(reopened);
-    results.push(sample("rekey", recovered ? "MEASURED" : "DIAGNOSTIC_INVALID", { recovered }));
-    results.push(sample("restart-recovery", recovered ? "MEASURED" : "INCONCLUSIVE", { recovered }));
-    results.push(sample("integrity-after-recovery", (await integrity(reopened)) === "ok" ? "MEASURED" : "DIAGNOSTIC_INVALID", { integrity: await integrity(reopened) }));
+    const recoveredIntegrity = await integrity(reopened);
+    if (recovered && recoveredIntegrity === "ok") {
+      await SecureStore.setItemAsync(KEY_REF, newKey, {
+        keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+      });
+      await SecureStore.deleteItemAsync(PENDING_REKEY_REF);
+    }
+    results.push(sample("rekey", recovered && recoveredIntegrity === "ok" ? "MEASURED" : "DIAGNOSTIC_INVALID", {
+      recovered,
+      integrity: recoveredIntegrity,
+      activeKeyRef: recovered && recoveredIntegrity === "ok" ? "new" : "old",
+      pendingKeyPresent: !(recovered && recoveredIntegrity === "ok")
+    }));
+    results.push(sample("restart-recovery", "INCONCLUSIVE", {
+      reason: "new SQLite connection is not a process restart",
+      recovered,
+      integrity: recoveredIntegrity
+    }));
+    results.push(sample("integrity-after-recovery", "INCONCLUSIVE", {
+      reason: "process restart required for recovery evidence",
+      integrity: recoveredIntegrity,
+      canary: recovered
+    }));
     await reopened.closeAsync();
-    await SecureStore.deleteItemAsync(PENDING_REKEY_REF);
   } finally {
     try {
       await database.closeAsync();
@@ -180,13 +277,65 @@ async function runVal003(): Promise<Val0034Sample[]> {
 
 async function runRekeyInterruption(): Promise<Val0034Sample[]> {
   const context = await prepareDatabase();
-  console.info("[FIT_VAL0034_REKEY_STARTED]", JSON.stringify({ databaseName: DB_NAME }));
-  // Keep enough synchronous work after the marker for the physical runner to stop the process.
+  const newKey = toHex(await Crypto.getRandomBytesAsync(32));
+  await SecureStore.setItemAsync(PENDING_REKEY_REF, newKey, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+  });
   await context.database.execAsync("BEGIN IMMEDIATE; UPDATE probe_items SET label = label || '-rekey';");
-  await context.database.execAsync(`PRAGMA rekey = "x'${toHex(await Crypto.getRandomBytesAsync(32))}'";`);
+  // The host may force-stop only after BEGIN/UPDATE proves the rekey transaction started.
+  console.info("[FIT_VAL0034_REKEY_STARTED]", JSON.stringify({
+    databaseName: DB_NAME,
+    phase: "rekey-started",
+    transaction: "BEGIN_UPDATE"
+  }));
+  await context.database.execAsync(`PRAGMA rekey = "x'${newKey}'";`);
   await context.database.execAsync("COMMIT;");
   await context.database.closeAsync();
-  return [sample("rekey-interruption", "MEASURED", { interruptionObserved: false })];
+  await SecureStore.setItemAsync(KEY_REF, newKey, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
+  });
+  await SecureStore.deleteItemAsync(PENDING_REKEY_REF);
+  return [sample("rekey-interruption", "INCONCLUSIVE", { interruptionObserved: false, reason: "no force-stop was requested" })];
+}
+
+async function runRecoveryAfterRestart() {
+  const custody = await recoverKeyCustody();
+  const recoveryVerified = custody.canary && custody.integrity === "ok";
+  return {
+    samples: [
+      sample("restart-process", "INCONCLUSIVE", {
+        reason: "process identity comparison is completed by the host runner",
+        processInstanceId: PROCESS_INSTANCE_ID
+      }),
+      sample("restart-recovery", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+        recoveryVerified,
+        activeKeyRef: custody.activeKeyRef,
+        pendingKeyPresent: custody.pendingKeyPresent,
+        custodyStatus: custody.status,
+        canary: custody.canary,
+        integrity: custody.integrity
+      }),
+      sample("integrity-after-recovery", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+        integrity: custody.integrity,
+        canary: custody.canary,
+        custodyStatus: custody.status
+      }),
+      sample("securestore-keystore", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+        keyRecoveredAfterRestart: recoveryVerified,
+        activeKeyRef: custody.activeKeyRef,
+        accessibility: "WHEN_UNLOCKED_THIS_DEVICE_ONLY"
+      })
+    ],
+    recovery: {
+      recoveryVerified,
+      activeKeyRef: custody.activeKeyRef,
+      pendingKeyPresent: custody.pendingKeyPresent,
+      custodyStatus: custody.status,
+      canary: custody.canary,
+      integrity: custody.integrity
+    },
+    processInstanceId: PROCESS_INSTANCE_ID
+  };
 }
 
 async function runVal004(): Promise<Val0034Sample[]> {
@@ -216,13 +365,42 @@ async function runVal004(): Promise<Val0034Sample[]> {
   ];
 }
 
-export async function runVal0034MobileProbe(mode: "run" | "rekey-interruption" = "run") {
-  const samples = mode === "rekey-interruption" ? await runRekeyInterruption() : [...(await runVal003()), ...(await runVal004())];
+export async function runVal0034MobileProbe(mode: "run" | "rekey-interruption" | "recovery" = "run") {
+  if (mode === "rekey-interruption") {
+    return {
+      schemaVersion: 1,
+      protocol: "VAL003_004_ANDROID_DISPOSABLE",
+      packageName: PACKAGE_NAME,
+      mode,
+      processInstanceId: PROCESS_INSTANCE_ID,
+      samples: await runRekeyInterruption(),
+      accountIsolation: "NOT_EVALUATED_WITHOUT_AUTH_A_B",
+      canonicalPromotion: false,
+      fallbackActivated: false
+    };
+  }
+  if (mode === "recovery") {
+    const recovery = await runRecoveryAfterRestart();
+    return {
+      schemaVersion: 1,
+      protocol: "VAL003_004_ANDROID_DISPOSABLE",
+      packageName: PACKAGE_NAME,
+      mode,
+      processInstanceId: recovery.processInstanceId,
+      recovery: recovery.recovery,
+      samples: recovery.samples,
+      accountIsolation: "NOT_EVALUATED_WITHOUT_AUTH_A_B",
+      canonicalPromotion: false,
+      fallbackActivated: false
+    };
+  }
+  const samples = [...(await runVal003()), ...(await runVal004())];
   return {
     schemaVersion: 1,
     protocol: "VAL003_004_ANDROID_DISPOSABLE",
     packageName: PACKAGE_NAME,
     mode,
+    processInstanceId: PROCESS_INSTANCE_ID,
     samples,
     accountIsolation: "NOT_EVALUATED_WITHOUT_AUTH_A_B",
     canonicalPromotion: false,

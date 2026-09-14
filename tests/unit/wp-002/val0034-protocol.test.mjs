@@ -6,6 +6,10 @@ import { join } from "node:path";
 import {
   buildVal0034Plan,
   classifyVal0034Report,
+  classifyExtractionEvidence,
+  classifyRestartRecovery,
+  classifyRekeyInterruption,
+  reconcileRekeyCustody,
   redactDeviceOutput,
   validateVal0034Report
 } from "../../native/wp-002-mobile-harness/val0034/protocol.mjs";
@@ -126,4 +130,81 @@ test("Windows entrypoint invokes Node explicitly and keeps the serial local", ()
   assert.match(script, /FIT_S23_ADB_SERIAL/);
   assert.doesNotMatch(script, /Write-Output.*\$serial/);
   assert.match(script, /APK_PROVENANCE\.json/);
+});
+
+test("metadata-only DB inspection is not measured extraction evidence", () => {
+  assert.equal(classifyExtractionEvidence({ files: [{ name: "wp002-val0034.db", exists: true, size: 42 }] }), "INCONCLUSIVE");
+  assert.equal(
+    classifyExtractionEvidence({
+      files: [
+        { name: "wp002-val0034.db", exists: true, size: 42, sha256: "a".repeat(64) },
+        { name: "wp002-val0034.db-wal", exists: true, size: 8, sha256: "b".repeat(64) },
+        { name: "wp002-val0034.db-shm", exists: true, size: 8, sha256: "c".repeat(64) }
+      ]
+    }),
+    "MEASURED"
+  );
+});
+
+test("a new SQLite connection alone is not a process restart", () => {
+  assert.equal(
+    classifyRestartRecovery({ processRestarted: false, newConnection: true, canary: true, integrity: "ok" }),
+    "INCONCLUSIVE"
+  );
+  assert.equal(
+    classifyRestartRecovery({ processRestarted: true, newConnection: true, canary: true, integrity: "ok" }),
+    "MEASURED"
+  );
+});
+
+test("a pre-rekey marker cannot prove interruption during rekey", () => {
+  assert.equal(
+    classifyRekeyInterruption({ markerPhase: "before-begin", forceStopped: true, recovery: true }),
+    "INCONCLUSIVE"
+  );
+  assert.equal(
+    classifyRekeyInterruption({ markerPhase: "rekey-started", forceStopped: true, recovery: true }),
+    "MEASURED"
+  );
+});
+
+test("successful rekey commits the pending key as the active custody reference", () => {
+  assert.deepEqual(
+    reconcileRekeyCustody({ activeKeyRef: "old", pendingKeyRef: "new", recoveryKeyRef: "new", recoveryVerified: true }),
+    { activeKeyRef: "new", pendingKeyRef: null, status: "COMMITTED" }
+  );
+  assert.deepEqual(
+    reconcileRekeyCustody({ activeKeyRef: "old", pendingKeyRef: "new", recoveryKeyRef: "old", recoveryVerified: false }),
+    { activeKeyRef: "old", pendingKeyRef: "new", status: "PENDING_RECOVERY" }
+  );
+});
+
+test("mobile protocol commits active custody only after reopening with the pending key", () => {
+  const source = readFileSync(
+    join(process.cwd(), "tests/native/wp-002-mobile-harness/val0034/mobile-protocol.ts"),
+    "utf8"
+  );
+  assert.ok(source.indexOf("await openEncrypted(newKey, true)") < source.indexOf("setItemAsync(KEY_REF, newKey"));
+  assert.match(source, /PENDING_REKEY_REF/);
+});
+
+test("rekey interruption marker follows BEGIN/UPDATE and recovery deep link exists", () => {
+  const source = readFileSync(
+    join(process.cwd(), "tests/native/wp-002-mobile-harness/val0034/mobile-protocol.ts"),
+    "utf8"
+  );
+  assert.ok(source.indexOf("BEGIN IMMEDIATE") < source.indexOf("FIT_VAL0034_REKEY_STARTED"));
+  assert.match(source, /recovery/);
+});
+
+test("physical runner requires real recovery and byte evidence before measuring", () => {
+  const source = readFileSync(
+    join(process.cwd(), "tests/native/wp-002-mobile-harness/val0034/run-val0034-android.mjs"),
+    "utf8"
+  );
+  assert.match(source, /fit-wp002:\/\/val0034\/recovery/);
+  assert.match(source, /processRestarted/);
+  assert.match(source, /recoveryVerified/);
+  assert.match(source, /installedApkMatchesCi/);
+  assert.match(source, /force-stop-during-rekey/);
 });

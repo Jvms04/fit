@@ -104,6 +104,36 @@ export function redactDeviceOutput(value) {
     .join("\n");
 }
 
+export function classifyExtractionEvidence({ files }) {
+  if (!Array.isArray(files) || files.length !== 3) return "INCONCLUSIVE";
+  const required = new Set(["wp002-val0034.db", "wp002-val0034.db-wal", "wp002-val0034.db-shm"]);
+  const valid = files.every((file) =>
+    file && required.has(file.name) &&
+    file.exists === true && Number.isFinite(file.size) && file.size >= 0 &&
+    typeof file.sha256 === "string" && HEX_64.test(file.sha256)
+  );
+  return valid ? "MEASURED" : "INCONCLUSIVE";
+}
+
+export function classifyRestartRecovery({ processRestarted, newConnection, canary, integrity }) {
+  return processRestarted === true && newConnection === true && canary === true && integrity === "ok"
+    ? "MEASURED"
+    : "INCONCLUSIVE";
+}
+
+export function classifyRekeyInterruption({ markerPhase, forceStopped, recovery }) {
+  return markerPhase === "rekey-started" && forceStopped === true && recovery === true
+    ? "MEASURED"
+    : "INCONCLUSIVE";
+}
+
+export function reconcileRekeyCustody({ activeKeyRef, pendingKeyRef, recoveryKeyRef, recoveryVerified }) {
+  if (recoveryVerified === true && pendingKeyRef && recoveryKeyRef === pendingKeyRef) {
+    return { activeKeyRef: pendingKeyRef, pendingKeyRef: null, status: "COMMITTED" };
+  }
+  return { activeKeyRef, pendingKeyRef: pendingKeyRef ?? null, status: "PENDING_RECOVERY" };
+}
+
 function assertHex(value, pattern, name) {
   if (typeof value !== "string" || !pattern.test(value)) throw new Error(`${name} must be hexadecimal`);
 }
