@@ -3,9 +3,10 @@ import * as SecureStore from "expo-secure-store";
 import * as SQLite from "expo-sqlite";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, Linking, StyleSheet, Text, View } from "react-native";
 
 import { runHermesAndroidVal006Probe } from "./val006/run-hermes-android";
+import { runVal0034MobileProbe } from "./val0034/mobile-protocol";
 
 const PROBE_KEY_REF = "wp002.sqlcipher.key";
 const SYNTHETIC_ROW_COUNT = 1_000;
@@ -84,12 +85,60 @@ async function runDatabaseCharacterization(): Promise<ProbeResult> {
 
 export default function App() {
   const [result, setResult] = useState<ProbeResult | null>(null);
+  const [val0034Mode, setVal0034Mode] = useState<"run" | "rekey-interruption" | null>(null);
   const items = useMemo(
     () => Array.from({ length: SYNTHETIC_ROW_COUNT }, (_, index) => `synthetic-row-${index + 1}`),
     []
   );
 
   useEffect(() => {
+    let mounted = true;
+    const updateFromUrl = (url: string | null) => {
+      if (!url) return;
+      try {
+        const prefix = "fit-wp002://";
+        if (!url.startsWith(prefix)) return;
+        const operation = (url.slice(prefix.length).split(/[?#]/u)[0] ?? "").replace(/^\/+/, "");
+        if (operation === "val0034/rekey-interruption") {
+          setVal0034Mode("rekey-interruption");
+        } else if (operation === "val0034/run") {
+          setVal0034Mode("run");
+        }
+      } catch {
+        // A malformed deep link leaves the normal probe untouched.
+      }
+    };
+    Linking.getInitialURL().then((url) => {
+      if (mounted) updateFromUrl(url);
+    });
+    const linkSubscription = Linking.addEventListener("url", ({ url }) => updateFromUrl(url));
+    return () => {
+      mounted = false;
+      linkSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!val0034Mode) return;
+    runVal0034MobileProbe(val0034Mode)
+      .then((report) => console.info(`[FIT_VAL0034] ${JSON.stringify(report)}`))
+      .catch((error: unknown) =>
+        console.error(
+          `[FIT_VAL0034] ${JSON.stringify({
+            schemaVersion: 1,
+            protocol: "VAL003_004_ANDROID_DISPOSABLE",
+            mode: val0034Mode,
+            classification: "DIAGNOSTIC_INVALID",
+            error: error instanceof Error ? error.message : "unknown VAL-003/004 probe error",
+            canonicalPromotion: false,
+            fallbackActivated: false
+          })}`
+        )
+      );
+  }, [val0034Mode]);
+
+  useEffect(() => {
+    if (val0034Mode) return;
     runDatabaseCharacterization()
       .then((nextResult) => {
         setResult(nextResult);
@@ -124,7 +173,7 @@ export default function App() {
           })}`
         );
       });
-  }, []);
+  }, [val0034Mode]);
 
   return (
     <View style={styles.screen} testID="wp002-probe-screen">
@@ -132,7 +181,7 @@ export default function App() {
       <View style={styles.header}>
         <Text style={styles.title}>WP-002 disposable probe</Text>
         <Text accessibilityLiveRegion="polite" testID="wp002-probe-status">
-          {result ? `${result.status} · ${result.rowCount ?? 0} synthetic rows` : "initializing"}
+          {val0034Mode ? `VAL-003/004 · ${val0034Mode}` : result ? `${result.status} · ${result.rowCount ?? 0} synthetic rows` : "initializing"}
         </Text>
       </View>
       <FlatList
