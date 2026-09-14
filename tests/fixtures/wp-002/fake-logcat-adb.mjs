@@ -20,5 +20,5 @@ if (command[0] === "shell" && command[1] === "logcat") {
   process.exit(0);
 }
 
-process.stderr.write(\`unsupported fake command: \${args.join(" ")}\n\`);
+process.stderr.write("unsupported fake command: " + args.join(" ") + "\n");
 process.exit(2);
