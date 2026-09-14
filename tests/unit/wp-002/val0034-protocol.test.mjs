@@ -211,6 +211,10 @@ test("physical runner requires real recovery and byte evidence before measuring"
   assert.match(source, /recoveryVerified/);
   assert.match(source, /installedApkMatchesCi/);
   assert.match(source, /force-stop-during-rekey/);
+  assert.match(source, /verify-rekey-not-completed/);
+  assert.match(source, /FIT_VAL0034_REKEY_COMPLETED/);
+  assert.match(source, /classifyRecoverySamples/);
+  assert.match(source, /classifyRekeyInterruptionEvidence/);
 });
 
 test("runner recovery samples require process restart and verified recovery", () => {

@@ -295,6 +295,11 @@ async function runRekeyInterruption(): Promise<Val0034Sample[]> {
     keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY
   });
   await SecureStore.deleteItemAsync(PENDING_REKEY_REF);
+  console.info("[FIT_VAL0034_REKEY_COMPLETED]", JSON.stringify({
+    databaseName: DB_NAME,
+    phase: "rekey-completed",
+    transaction: "BEGIN_UPDATE"
+  }));
   return [sample("rekey-interruption", "INCONCLUSIVE", { interruptionObserved: false, reason: "no force-stop was requested" })];
 }
 
@@ -307,21 +312,24 @@ async function runRecoveryAfterRestart() {
         reason: "process identity comparison is completed by the host runner",
         processInstanceId: PROCESS_INSTANCE_ID
       }),
-      sample("restart-recovery", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+      sample("restart-recovery", "INCONCLUSIVE", {
         recoveryVerified,
+        requiresProcessRestart: true,
         activeKeyRef: custody.activeKeyRef,
         pendingKeyPresent: custody.pendingKeyPresent,
         custodyStatus: custody.status,
         canary: custody.canary,
         integrity: custody.integrity
       }),
-      sample("integrity-after-recovery", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+      sample("integrity-after-recovery", "INCONCLUSIVE", {
         integrity: custody.integrity,
+        requiresProcessRestart: true,
         canary: custody.canary,
         custodyStatus: custody.status
       }),
-      sample("securestore-keystore", recoveryVerified ? "MEASURED" : "INCONCLUSIVE", {
+      sample("securestore-keystore", "INCONCLUSIVE", {
         keyRecoveredAfterRestart: recoveryVerified,
+        requiresProcessRestart: true,
         activeKeyRef: custody.activeKeyRef,
         accessibility: "WHEN_UNLOCKED_THIS_DEVICE_ONLY"
       })

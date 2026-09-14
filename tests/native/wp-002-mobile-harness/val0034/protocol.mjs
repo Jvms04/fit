@@ -121,8 +121,11 @@ export function classifyRestartRecovery({ processRestarted, newConnection, canar
     : "INCONCLUSIVE";
 }
 
-export function classifyRekeyInterruption({ markerPhase, forceStopped, recovery }) {
-  return markerPhase === "rekey-started" && forceStopped === true && recovery === true
+export function classifyRekeyInterruption({ markerPhase, forceStopped, recovery, completionObserved }) {
+  return markerPhase === "rekey-started" &&
+    forceStopped === true &&
+    recovery === true &&
+    completionObserved === false
     ? "MEASURED"
     : "INCONCLUSIVE";
 }

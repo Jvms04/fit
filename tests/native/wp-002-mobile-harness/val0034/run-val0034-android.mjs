@@ -9,7 +9,7 @@ import { pathToFileURL } from "node:url";
 import process from "node:process";
 
 import { portableInvocation } from "../../../performance/wp-002/lib/portable-command.mjs";
-import { buildVal0034Plan, redactDeviceOutput } from "./protocol.mjs";
+import { buildVal0034Plan, classifyRekeyInterruption, redactDeviceOutput } from "./protocol.mjs";
 
 const PACKAGE_NAME = "com.fit.wp002probe";
 const ACTIVITY = `${PACKAGE_NAME}/.MainActivity`;
@@ -134,6 +134,46 @@ function markerValues(raw, marker) {
     });
 }
 
+const RECOVERY_SAMPLE_OPERATIONS = new Set([
+  "restart-recovery",
+  "integrity-after-recovery",
+  "securestore-keystore"
+]);
+
+export function classifyRecoverySamples(samples, { processRestarted, recoveryVerified }) {
+  const eligible = processRestarted === true && recoveryVerified === true;
+  return (Array.isArray(samples) ? samples : []).map((sample) => {
+    if (!sample || !RECOVERY_SAMPLE_OPERATIONS.has(sample.operation)) return sample;
+    return {
+      ...sample,
+      classification: eligible && sample.classification !== "DIAGNOSTIC_INVALID"
+        ? "MEASURED"
+        : "INCONCLUSIVE",
+      detail: {
+        ...(sample.detail ?? {}),
+        processRestarted: processRestarted === true,
+        recoveryVerified: recoveryVerified === true,
+        ...(eligible ? {} : { reason: "process restart and verified recovery are both required" })
+      }
+    };
+  });
+}
+
+export function classifyRekeyInterruptionEvidence({
+  markerPhase,
+  forceStopped,
+  processRestarted,
+  recoveryVerified,
+  completionObservedBeforeForceStop
+}) {
+  return classifyRekeyInterruption({
+    markerPhase,
+    forceStopped,
+    recovery: processRestarted === true && recoveryVerified === true,
+    completionObserved: completionObservedBeforeForceStop
+  });
+}
+
 function run() {
   const values = parseArgs(process.argv.slice(2));
   const adb = values.get("adb") ?? process.env.ADB_BIN ?? "adb";
@@ -220,16 +260,27 @@ function run() {
     adbCall(["shell", "logcat", "-c"], "logcat-clear-rekey");
     adbCall(["shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", "fit-wp002://val0034/rekey-interruption", ACTIVITY], "launch-rekey-interruption");
     let interruptionObserved = false;
+    let completionObservedBeforeForceStop = false;
     for (let poll = 0; poll < 20; poll += 1) {
       const probeLog = adbCall(["shell", "logcat", "-d", "-v", "brief"], "poll-rekey-interruption").stdout;
       if (probeLog.includes("[FIT_VAL0034_REKEY_STARTED]")) {
         interruptionObserved = true;
-        report.raw.appMarkers.push(...probeLog.split(/\r?\n/u).filter((line) => line.includes("[FIT_VAL0034_REKEY_STARTED]")));
+        completionObservedBeforeForceStop = probeLog.includes("[FIT_VAL0034_REKEY_COMPLETED]");
+        report.raw.appMarkers.push(...probeLog.split(/\r?\n/u).filter((line) =>
+          line.includes("[FIT_VAL0034_REKEY_STARTED]") || line.includes("[FIT_VAL0034_REKEY_COMPLETED]")
+        ));
         break;
       }
       execute(adb, ["-s", serial, "shell", "sleep", "0.25"]);
     }
     if (interruptionObserved) {
+      // Re-read immediately before killing the process. A completion marker means
+      // the normal rekey finished first and therefore cannot be measured as interrupted.
+      const preStopLog = adbCall(["shell", "logcat", "-d", "-v", "brief"], "verify-rekey-not-completed").stdout;
+      completionObservedBeforeForceStop ||= preStopLog.includes("[FIT_VAL0034_REKEY_COMPLETED]");
+      report.raw.appMarkers.push(...preStopLog.split(/\r?\n/u).filter((line) =>
+        line.includes("[FIT_VAL0034_REKEY_STARTED]") || line.includes("[FIT_VAL0034_REKEY_COMPLETED]")
+      ));
       adbCall(["shell", "am", "force-stop", PACKAGE_NAME], "force-stop-during-rekey");
       adbCall(["shell", "logcat", "-c"], "logcat-clear-recovery");
       adbCall(["shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", "fit-wp002://val0034/recovery", ACTIVITY], "launch-recovery");
@@ -244,19 +295,46 @@ function run() {
       ].includes(sample.operation));
       report.samples.push({
         operation: "rekey-interruption",
-        classification: recoveryVerified ? "MEASURED" : "INCONCLUSIVE",
-        detail: { interruptionObserved: true, markerPhase: "rekey-started", forceStopped: true, recoveryVerified }
+        classification: classifyRekeyInterruptionEvidence({
+          markerPhase: "rekey-started",
+          forceStopped: true,
+          processRestarted,
+          recoveryVerified,
+          completionObservedBeforeForceStop
+        }),
+        detail: {
+          interruptionObserved: true,
+          markerPhase: "rekey-started",
+          forceStopped: true,
+          processRestarted,
+          recoveryVerified,
+          completionObservedBeforeForceStop
+        }
       });
       report.samples.push({
         operation: "restart-process",
         classification: processRestarted && recoveryVerified ? "MEASURED" : "INCONCLUSIVE",
         detail: { processRestarted, initialProcessInstanceId: initialProcessInstanceId ? "present" : "missing", recoveryProcessInstanceId: recoveryReport?.processInstanceId ? "present" : "missing" }
       });
-      if (recoveryReport?.samples) report.samples.push(...recoveryReport.samples.filter((sample) => sample.operation !== "restart-process"));
-      report.recovery = recoveryReport?.recovery ?? { recoveryVerified: false, processRestarted };
+      if (recoveryReport?.samples) {
+        report.samples.push(...classifyRecoverySamples(recoveryReport.samples, {
+          processRestarted,
+          recoveryVerified
+        }).filter((sample) => sample.operation !== "restart-process"));
+      }
+      report.recovery = {
+        ...(recoveryReport?.recovery ?? {}),
+        processRestarted,
+        recoveryVerified,
+        completionObservedBeforeForceStop
+      };
     } else {
       report.samples = report.samples.filter((sample) => sample.operation !== "rekey-interruption");
-      report.samples.push({ operation: "rekey-interruption", classification: "DIAGNOSTIC_INVALID", detail: { interruptionObserved: false } });
+      report.samples.push({
+        operation: "rekey-interruption",
+        classification: "INCONCLUSIVE",
+        detail: { interruptionObserved: false, reason: "rekey-started marker was not observed" }
+      });
     }
 
     // Lock/unlock is deliberately recorded as a physical-state observation, never inferred.
@@ -292,5 +370,7 @@ function run() {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   process.exitCode = run();
+}
 }
