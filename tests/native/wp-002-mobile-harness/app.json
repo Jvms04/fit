@@ -4,6 +4,7 @@
     "slug": "fit-wp-002-g0-harness",
     "version": "0.0.0",
     "runtimeVersion": "wp-002-disposable",
+    "scheme": "fit-wp002",
     "jsEngine": "hermes",
     "orientation": "portrait",
     "newArchEnabled": true,
