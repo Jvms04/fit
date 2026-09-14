@@ -280,14 +280,26 @@ test("runner refuses interruption measurement when completion appears after forc
   );
 });
 
-test("bounds the real logcat collection path while preserving all protocol markers", () => {
+test("uses a shell-safe device filter and preserves only the four exact protocol markers", () => {
   const fakeAdb = join(process.cwd(), "tests/fixtures/wp-002/fake-logcat-adb.mjs");
   const captured = captureProtocolLogcat(fakeAdb, "serial-raw-must-not-appear", "collect-screen-unlock-log");
 
   assert.equal(captured.exitCode, 0);
+  assert.deepEqual(captured.command, [
+    "shell",
+    "logcat",
+    "-d",
+    "-v",
+    "brief",
+    "-e",
+    "FIT_VAL0034"
+  ]);
+  assert.match(captured.command.at(-1), /^FIT_VAL0034$/u);
+  assert.doesNotMatch(captured.command.at(-1), /[^A-Za-z0-9_]/u);
   assert.match(captured.stdout, /\[FIT_VAL0034\]/);
   assert.match(captured.stdout, /\[FIT_VAL0034_REKEY_STARTED\]/);
   assert.match(captured.stdout, /\[FIT_VAL0034_REKEY_COMPLETED\]/);
   assert.match(captured.stdout, /\[FIT_VAL0034_APPSTATE\]/);
+  assert.doesNotMatch(captured.stdout, /FIT_VAL0034_EXTRA|unbracketed/u);
   assert.ok(captured.stdout.length < 4096, "marker-scoped capture must not retain unbounded logcat noise");
 });

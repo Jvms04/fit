@@ -56,8 +56,18 @@ function execute(file, args, options = {}) {
   };
 }
 
-const PROTOCOL_LOGCAT_REGEX = String.raw`\[FIT_VAL0034(?:_REKEY_STARTED|_REKEY_COMPLETED|_APPSTATE)?\]`;
+const PROTOCOL_LOGCAT_DEVICE_FILTER = "FIT_VAL0034";
+const PROTOCOL_LOGCAT_MARKERS = Object.freeze([
+  "[FIT_VAL0034]",
+  "[FIT_VAL0034_REKEY_STARTED]",
+  "[FIT_VAL0034_REKEY_COMPLETED]",
+  "[FIT_VAL0034_APPSTATE]"
+]);
 const PROTOCOL_LOGCAT_MAX_BUFFER_BYTES = 256 * 1024;
+
+function isProtocolMarkerLine(line) {
+  return PROTOCOL_LOGCAT_MARKERS.some((marker) => line.includes(marker));
+}
 
 export function captureProtocolLogcat(file, serial, phase = "collect-logcat") {
   const args = [
@@ -69,7 +79,7 @@ export function captureProtocolLogcat(file, serial, phase = "collect-logcat") {
     "-v",
     "brief",
     "-e",
-    PROTOCOL_LOGCAT_REGEX
+    PROTOCOL_LOGCAT_DEVICE_FILTER
   ];
   const result = execute(file, args, { maxBuffer: PROTOCOL_LOGCAT_MAX_BUFFER_BYTES });
   if (result.exitCode !== 0) {
@@ -81,9 +91,13 @@ export function captureProtocolLogcat(file, serial, phase = "collect-logcat") {
   }
   const stdout = String(result.stdout)
     .split(/\r?\n/u)
-    .filter((line) => new RegExp(PROTOCOL_LOGCAT_REGEX, "u").test(line))
+    .filter(isProtocolMarkerLine)
     .join("\n");
-  return { ...result, stdout: stdout ? `${stdout}\n` : "" };
+  return {
+    ...result,
+    command: args.slice(2),
+    stdout: stdout ? `${stdout}\n` : ""
+  };
 }
 function sha256File(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");

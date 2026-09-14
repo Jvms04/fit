@@ -15,6 +15,8 @@ if (command[0] === "shell" && command[1] === "logcat") {
     "09-14 ReactNativeJS: I [FIT_VAL0034_REKEY_STARTED] {\"phase\":\"rekey-started\"}",
     "09-14 ReactNativeJS: I [FIT_VAL0034_REKEY_COMPLETED] {\"phase\":\"rekey-completed\"}",
     "09-14 ReactNativeJS: I [FIT_VAL0034_APPSTATE] {\"state\":\"active\",\"sealed\":false}",
+    "09-14 ReactNativeJS: I [FIT_VAL0034_EXTRA] {\"should\":\"be-host-filtered\"}",
+    "09-14 ReactNativeJS: I FIT_VAL0034 unbracketed {\"should\":\"be-host-filtered\"}",
     ""
   ].join("\n"));
   process.exit(0);
