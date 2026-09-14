@@ -42,11 +42,12 @@ function required(values, name) {
   return value;
 }
 
-function execute(file, args) {
+function execute(file, args, options = {}) {
   const invocation = portableInvocation(file, args);
   const result = spawnSync(invocation.executable, invocation.args, {
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"],
+    ...options
   });
   return {
     exitCode: result.error ? null : result.status,
@@ -55,6 +56,35 @@ function execute(file, args) {
   };
 }
 
+const PROTOCOL_LOGCAT_REGEX = String.raw`\[FIT_VAL0034(?:_REKEY_STARTED|_REKEY_COMPLETED|_APPSTATE)?\]`;
+const PROTOCOL_LOGCAT_MAX_BUFFER_BYTES = 256 * 1024;
+
+export function captureProtocolLogcat(file, serial, phase = "collect-logcat") {
+  const args = [
+    "-s",
+    serial,
+    "shell",
+    "logcat",
+    "-d",
+    "-v",
+    "brief",
+    "-e",
+    PROTOCOL_LOGCAT_REGEX
+  ];
+  const result = execute(file, args, { maxBuffer: PROTOCOL_LOGCAT_MAX_BUFFER_BYTES });
+  if (result.exitCode !== 0) {
+    throw new ProbeError(
+      `${phase} failed: ${result.stderr.trim() || result.stdout.trim()}`,
+      phase,
+      args.slice(2)
+    );
+  }
+  const stdout = String(result.stdout)
+    .split(/\r?\n/u)
+    .filter((line) => new RegExp(PROTOCOL_LOGCAT_REGEX, "u").test(line))
+    .join("\n");
+  return { ...result, stdout: stdout ? `${stdout}\n` : "" };
+}
 function sha256File(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
@@ -207,7 +237,9 @@ function run() {
   };
   let tempDirectory = null;
   const adbCall = (args, phase, allowFailure = false) => {
-    const result = execute(adb, ["-s", serial, ...args]);
+    const result = args[0] === "shell" && args[1] === "logcat" && args.includes("-d")
+      ? captureProtocolLogcat(adb, serial, phase)
+      : execute(adb, ["-s", serial, ...args]);
     const sanitizedStdout = sanitize(result.stdout);
     const sanitizedStderr = sanitize(result.stderr);
     if (result.exitCode !== 0 && !allowFailure) {
