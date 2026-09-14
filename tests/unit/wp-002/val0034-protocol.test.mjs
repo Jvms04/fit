@@ -13,6 +13,10 @@ import {
   redactDeviceOutput,
   validateVal0034Report
 } from "../../native/wp-002-mobile-harness/val0034/protocol.mjs";
+import {
+  classifyRecoverySamples,
+  classifyRekeyInterruptionEvidence
+} from "../../native/wp-002-mobile-harness/val0034/run-val0034-android.mjs";
 
 test("builds the disposable VAL-003/004 plan without claiming A/B isolation", () => {
   const plan = buildVal0034Plan({
@@ -163,7 +167,7 @@ test("a pre-rekey marker cannot prove interruption during rekey", () => {
     "INCONCLUSIVE"
   );
   assert.equal(
-    classifyRekeyInterruption({ markerPhase: "rekey-started", forceStopped: true, recovery: true }),
+    classifyRekeyInterruption({ markerPhase: "rekey-started", forceStopped: true, recovery: true, completionObserved: false }),
     "MEASURED"
   );
 });
@@ -207,4 +211,50 @@ test("physical runner requires real recovery and byte evidence before measuring"
   assert.match(source, /recoveryVerified/);
   assert.match(source, /installedApkMatchesCi/);
   assert.match(source, /force-stop-during-rekey/);
+});
+
+test("runner recovery samples require process restart and verified recovery", () => {
+  const sourceSamples = [
+    { operation: "restart-recovery", classification: "MEASURED" },
+    { operation: "integrity-after-recovery", classification: "MEASURED" },
+    { operation: "securestore-keystore", classification: "MEASURED" }
+  ];
+  assert.deepEqual(
+    classifyRecoverySamples(sourceSamples, { processRestarted: false, recoveryVerified: true })
+      .map((sample) => sample.classification),
+    ["INCONCLUSIVE", "INCONCLUSIVE", "INCONCLUSIVE"]
+  );
+  assert.deepEqual(
+    classifyRecoverySamples(sourceSamples, { processRestarted: true, recoveryVerified: false })
+      .map((sample) => sample.classification),
+    ["INCONCLUSIVE", "INCONCLUSIVE", "INCONCLUSIVE"]
+  );
+  assert.deepEqual(
+    classifyRecoverySamples(sourceSamples, { processRestarted: true, recoveryVerified: true })
+      .map((sample) => sample.classification),
+    ["MEASURED", "MEASURED", "MEASURED"]
+  );
+});
+
+test("runner refuses rekey interruption when completion preceded force-stop", () => {
+  assert.equal(
+    classifyRekeyInterruptionEvidence({
+      markerPhase: "rekey-started",
+      forceStopped: true,
+      processRestarted: true,
+      recoveryVerified: true,
+      completionObservedBeforeForceStop: true
+    }),
+    "INCONCLUSIVE"
+  );
+  assert.equal(
+    classifyRekeyInterruptionEvidence({
+      markerPhase: "rekey-started",
+      forceStopped: true,
+      processRestarted: true,
+      recoveryVerified: true,
+      completionObservedBeforeForceStop: false
+    }),
+    "MEASURED"
+  );
 });

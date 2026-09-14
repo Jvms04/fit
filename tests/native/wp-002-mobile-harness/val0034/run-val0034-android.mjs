@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import process from "node:process";
 
 import { portableInvocation } from "../../../performance/wp-002/lib/portable-command.mjs";
@@ -290,4 +291,6 @@ function run() {
   }
 }
 
-process.exitCode = run();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+  process.exitCode = run();
+}
