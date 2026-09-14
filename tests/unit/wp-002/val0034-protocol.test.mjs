@@ -212,6 +212,7 @@ test("physical runner requires real recovery and byte evidence before measuring"
   assert.match(source, /installedApkMatchesCi/);
   assert.match(source, /force-stop-during-rekey/);
   assert.match(source, /verify-rekey-not-completed/);
+  assert.match(source, /verify-rekey-not-completed-after-force-stop/);
   assert.match(source, /FIT_VAL0034_REKEY_COMPLETED/);
   assert.match(source, /classifyRecoverySamples/);
   assert.match(source, /classifyRekeyInterruptionEvidence/);
@@ -257,8 +258,23 @@ test("runner refuses rekey interruption when completion preceded force-stop", ()
       forceStopped: true,
       processRestarted: true,
       recoveryVerified: true,
-      completionObservedBeforeForceStop: false
+      completionObservedBeforeForceStop: false,
+      completionObservedAfterForceStop: false
     }),
     "MEASURED"
+  );
+});
+
+test("runner refuses interruption measurement when completion appears after force-stop", () => {
+  assert.equal(
+    classifyRekeyInterruptionEvidence({
+      markerPhase: "rekey-started",
+      forceStopped: true,
+      processRestarted: true,
+      recoveryVerified: true,
+      completionObservedBeforeForceStop: false,
+      completionObservedAfterForceStop: true
+    }),
+    "INCONCLUSIVE"
   );
 });
