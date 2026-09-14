@@ -164,13 +164,20 @@ export function classifyRekeyInterruptionEvidence({
   forceStopped,
   processRestarted,
   recoveryVerified,
-  completionObservedBeforeForceStop
+  completionObservedBeforeForceStop,
+  completionObservedAfterForceStop
 }) {
+  const completionObserved =
+    completionObservedBeforeForceStop === true || completionObservedAfterForceStop === true
+      ? true
+      : completionObservedBeforeForceStop === false && completionObservedAfterForceStop === false
+        ? false
+        : undefined;
   return classifyRekeyInterruption({
     markerPhase,
     forceStopped,
     recovery: processRestarted === true && recoveryVerified === true,
-    completionObserved: completionObservedBeforeForceStop
+    completionObserved
   });
 }
 
@@ -282,6 +289,15 @@ function run() {
         line.includes("[FIT_VAL0034_REKEY_STARTED]") || line.includes("[FIT_VAL0034_REKEY_COMPLETED]")
       ));
       adbCall(["shell", "am", "force-stop", PACKAGE_NAME], "force-stop-during-rekey");
+      // Capture once more before clearing logcat: completion may have raced with the kill.
+      const postForceStopLog = adbCall(
+        ["shell", "logcat", "-d", "-v", "brief"],
+        "verify-rekey-not-completed-after-force-stop"
+      ).stdout;
+      const completionObservedAfterForceStop = postForceStopLog.includes("[FIT_VAL0034_REKEY_COMPLETED]");
+      report.raw.appMarkers.push(...postForceStopLog.split(/\r?\n/u).filter((line) =>
+        line.includes("[FIT_VAL0034_REKEY_STARTED]") || line.includes("[FIT_VAL0034_REKEY_COMPLETED]")
+      ));
       adbCall(["shell", "logcat", "-c"], "logcat-clear-recovery");
       adbCall(["shell", "am", "start", "-W", "-a", "android.intent.action.VIEW", "-d", "fit-wp002://val0034/recovery", ACTIVITY], "launch-recovery");
       adbCall(["shell", "sleep", "3"], "await-recovery");
@@ -300,7 +316,8 @@ function run() {
           forceStopped: true,
           processRestarted,
           recoveryVerified,
-          completionObservedBeforeForceStop
+          completionObservedBeforeForceStop,
+          completionObservedAfterForceStop
         }),
         detail: {
           interruptionObserved: true,
@@ -308,7 +325,8 @@ function run() {
           forceStopped: true,
           processRestarted,
           recoveryVerified,
-          completionObservedBeforeForceStop
+          completionObservedBeforeForceStop,
+          completionObservedAfterForceStop
         }
       });
       report.samples.push({
@@ -326,7 +344,8 @@ function run() {
         ...(recoveryReport?.recovery ?? {}),
         processRestarted,
         recoveryVerified,
-        completionObservedBeforeForceStop
+        completionObservedBeforeForceStop,
+        completionObservedAfterForceStop
       };
     } else {
       report.samples = report.samples.filter((sample) => sample.operation !== "rekey-interruption");
