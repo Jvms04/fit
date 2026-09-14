@@ -86,6 +86,7 @@ async function runDatabaseCharacterization(): Promise<ProbeResult> {
 export default function App() {
   const [result, setResult] = useState<ProbeResult | null>(null);
   const [val0034Mode, setVal0034Mode] = useState<"run" | "rekey-interruption" | null>(null);
+  const [linkResolved, setLinkResolved] = useState(false);
   const items = useMemo(
     () => Array.from({ length: SYNTHETIC_ROW_COUNT }, (_, index) => `synthetic-row-${index + 1}`),
     []
@@ -108,9 +109,14 @@ export default function App() {
         // A malformed deep link leaves the normal probe untouched.
       }
     };
-    Linking.getInitialURL().then((url) => {
-      if (mounted) updateFromUrl(url);
-    });
+    Linking.getInitialURL()
+      .then((url) => {
+        if (mounted) updateFromUrl(url);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (mounted) setLinkResolved(true);
+      });
     const linkSubscription = Linking.addEventListener("url", ({ url }) => updateFromUrl(url));
     return () => {
       mounted = false;
@@ -138,7 +144,7 @@ export default function App() {
   }, [val0034Mode]);
 
   useEffect(() => {
-    if (val0034Mode) return;
+    if (!linkResolved || val0034Mode) return;
     runDatabaseCharacterization()
       .then((nextResult) => {
         setResult(nextResult);
@@ -173,7 +179,7 @@ export default function App() {
           })}`
         );
       });
-  }, [val0034Mode]);
+  }, [linkResolved, val0034Mode]);
 
   return (
     <View style={styles.screen} testID="wp002-probe-screen">
