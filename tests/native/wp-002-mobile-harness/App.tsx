@@ -5,6 +5,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Linking, StyleSheet, Text, View } from "react-native";
 
+import { encodeHermesReportChunks } from "./val006/hermes-chunks.mjs";
 import { runHermesAndroidVal006Probe } from "./val006/run-hermes-android";
 import { runVal0034MobileProbe } from "./val0034/mobile-protocol";
 
@@ -22,8 +23,20 @@ type ProbeResult = {
   message?: string;
 };
 
-function toHex(bytes: Uint8Array): string {
-  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+function toHex(bytes: Uint8Array | ArrayBuffer): string {
+  return Array.from(new Uint8Array(bytes), (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function emitHermesReport(report: unknown): Promise<void> {
+  const executionId = toHex(await Crypto.getRandomBytesAsync(16));
+  const chunks = await encodeHermesReportChunks(report, {
+    executionId,
+    sha256: async (bytes: Uint8Array) =>
+      toHex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes as Uint8Array<ArrayBuffer>))
+  });
+  for (const chunk of chunks) {
+    console.info(`[FIT_WP002_VAL006_HERMES_CHUNK] ${chunk}`);
+  }
 }
 
 async function getProbeKey(): Promise<string> {
@@ -163,23 +176,26 @@ export default function App() {
       });
 
     runHermesAndroidVal006Probe()
-      .then((temporalReport) => {
-        console.info(`[FIT_WP002_VAL006_HERMES] ${JSON.stringify(temporalReport)}`);
-      })
+      .then((temporalReport) => emitHermesReport(temporalReport))
+      .catch((error: unknown) =>
+        emitHermesReport({
+          schemaVersion: 1,
+          wp: "WP-002",
+          validation: "VAL-006",
+          classification: "VAL006_HERMES_ANDROID_DIAGNOSTIC_INVALID",
+          error: error instanceof Error ? error.message : "unknown temporal probe error",
+          comparable: false,
+          canonicalPromotion: false,
+          automaticPromotion: false,
+          fallbackActivated: false
+        })
+      )
       .catch((error: unknown) => {
-        console.error(
-          `[FIT_WP002_VAL006_HERMES] ${JSON.stringify({
-            schemaVersion: 1,
-            wp: "WP-002",
-            validation: "VAL-006",
-            classification: "VAL006_HERMES_ANDROID_DIAGNOSTIC_INVALID",
-            error: error instanceof Error ? error.message : "unknown temporal probe error",
-            comparable: false,
-            canonicalPromotion: false,
-            automaticPromotion: false,
-            fallbackActivated: false
-          })}`
-        );
+        console.error(`[FIT_WP002_VAL006_HERMES_EMIT_ERROR] ${JSON.stringify({
+          schemaVersion: 1,
+          protocol: "VAL006_HERMES_LOGCAT_CHUNK",
+          error: error instanceof Error ? error.message : "unknown chunk emission error"
+        })}`);
       });
   }, [linkResolved, val0034Mode]);
 

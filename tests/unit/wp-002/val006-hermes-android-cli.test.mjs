@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { buildNode24Report } from "../../temporal/wp-002/run-node-val006.mjs";
+import { HERMES_CHUNK_MARKER, encodeHermesReportChunks } from "../../native/wp-002-mobile-harness/val006/hermes-chunks.mjs";
 import { buildHermesAndroidReport } from "../../native/wp-002-mobile-harness/val006/hermes-protocol.mjs";
 
 const runner = fileURLToPath(
@@ -30,6 +31,10 @@ const ruleBasePath = fileURLToPath(
 
 function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
+}
+
+function sha256Bytes(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
 }
 
 function git(directory, args) {
@@ -133,7 +138,14 @@ async function createFixture({ installedMismatch = false } = {}) {
   });
   const runtimeReportPath = join(artifact, "runtime.json");
   const nodeReportPath = join(artifact, "node.json");
-  writeFileSync(runtimeReportPath, JSON.stringify(runtimeReport));
+  const runtimeChunks = await encodeHermesReportChunks(runtimeReport, {
+    executionId: "c".repeat(32),
+    sha256: sha256Bytes
+  });
+  writeFileSync(
+    runtimeReportPath,
+    runtimeChunks.map((chunk) => `09-10 ReactNativeJS: I ${HERMES_CHUNK_MARKER} ${chunk}`).join("\n")
+  );
   writeFileSync(nodeReportPath, `${JSON.stringify(nodeReport, null, 2)}\n`);
 
   return {
