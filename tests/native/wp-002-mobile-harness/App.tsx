@@ -31,11 +31,8 @@ async function emitHermesReport(report: unknown): Promise<void> {
   const executionId = toHex(await Crypto.getRandomBytesAsync(16));
   const chunks = await encodeHermesReportChunks(report, {
     executionId,
-    sha256: async (bytes: Uint8Array) => {
-      const digestBuffer = new ArrayBuffer(bytes.byteLength);
-      new Uint8Array(digestBuffer).set(bytes);
-      return toHex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, digestBuffer));
-    }
+    sha256: async (bytes: Uint8Array) =>
+      toHex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes))
   });
   for (const chunk of chunks) {
     console.info(`[FIT_WP002_VAL006_HERMES_CHUNK] ${chunk}`);
@@ -194,7 +191,7 @@ export default function App() {
         })
       )
       .catch((error: unknown) => {
-        console.error(`[FIT_WP002_VAL006_HERMES_CHUNK] ${JSON.stringify({
+        console.error(`[FIT_WP002_VAL006_HERMES_EMIT_ERROR] ${JSON.stringify({
           schemaVersion: 1,
           protocol: "VAL006_HERMES_LOGCAT_CHUNK",
           error: error instanceof Error ? error.message : "unknown chunk emission error"
