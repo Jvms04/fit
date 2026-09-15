@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -74,5 +75,21 @@ test("rejects duplicate, out-of-order, mixed-execution and invalid-integrity chu
   assert.throws(
     () => reconstructHermesReport(lines([JSON.stringify(corrupted), ...first.slice(1)]).join("\n"), { sha256 }),
     /integrity|hash/i
+  );
+});
+
+
+test("keeps an emission-error line outside the chunk protocol", async () => {
+  const appSource = readFileSync(
+    new URL("../../native/wp-002-mobile-harness/App.tsx", import.meta.url),
+    "utf8"
+  );
+  const errorLine = "[FIT_WP002_VAL006_HERMES_EMIT_ERROR] {\"error\":\"digest failed\"}";
+
+  assert.match(appSource, /\[FIT_WP002_VAL006_HERMES_EMIT_ERROR\]/u);
+  assert.doesNotMatch(appSource, /\[FIT_WP002_VAL006_HERMES_CHUNK\][^\r\n]*unknown chunk emission error/u);
+  assert.throws(
+    () => reconstructHermesReport(errorLine, { sha256 }),
+    (error) => error.code === "MISSING"
   );
 });
