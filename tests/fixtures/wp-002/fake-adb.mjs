@@ -84,7 +84,7 @@ if (command[0] === "logcat") {
       );
       if (process.env.FAKE_ADB_HERMES_REPORT) {
         const hermesReport = readFileSync(process.env.FAKE_ADB_HERMES_REPORT, "utf8").trim();
-        process.stdout.write(`09-10 ReactNativeJS: I [FIT_WP002_VAL006_HERMES] ${hermesReport}\n`);
+        process.stdout.write(`${hermesReport}\n`);
       }
     }
   }
