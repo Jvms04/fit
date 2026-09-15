@@ -31,7 +31,7 @@ async function emitHermesReport(report: unknown): Promise<void> {
   const executionId = toHex(await Crypto.getRandomBytesAsync(16));
   const chunks = await encodeHermesReportChunks(report, {
     executionId,
-    sha256: async (bytes) => toHex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes))
+    sha256: async (bytes: Uint8Array) => toHex(await Crypto.digest(Crypto.CryptoDigestAlgorithm.SHA256, bytes))
   });
   for (const chunk of chunks) {
     console.info(`[FIT_WP002_VAL006_HERMES_CHUNK] ${chunk}`);
