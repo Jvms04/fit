@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import process from "node:process";
 
+import { reconstructHermesReport } from "../../native/wp-002-mobile-harness/val006/hermes-chunks.mjs";
 import { parseDeviceList } from "../../performance/wp-002/lib/android-output.mjs";
 import { portableInvocation } from "../../performance/wp-002/lib/portable-command.mjs";
 
@@ -54,6 +55,10 @@ function sha256(path) {
   return createHash("sha256").update(readFileSync(path)).digest("hex");
 }
 
+function sha256Bytes(bytes) {
+  return createHash("sha256").update(bytes).digest("hex");
+}
+
 function readJson(path, label) {
   try {
     return JSON.parse(readFileSync(path, "utf8"));
@@ -69,19 +74,15 @@ function gitHead(repoRoot) {
 }
 
 function parseHermesMarker(raw) {
-  const lines = String(raw).split(/\r?\n/u).filter((line) =>
-    line.includes("[FIT_WP002_VAL006_HERMES]")
-  );
-  for (const line of lines.reverse()) {
-    const start = line.indexOf("{", line.indexOf("[FIT_WP002_VAL006_HERMES]"));
-    if (start < 0) continue;
-    try {
-      return JSON.parse(line.slice(start));
-    } catch {
-      // Continue to an earlier complete marker while preserving all raw lines.
+  try {
+    const sequence = reconstructHermesReport(String(raw), { sha256: sha256Bytes });
+    return JSON.parse(sequence.payloadText);
+  } catch (error) {
+    if (error.code === "MISSING" || error.code === "INCOMPLETE") {
+      return null;
     }
+    throw error;
   }
-  return null;
 }
 
 function buildInitialReport() {
