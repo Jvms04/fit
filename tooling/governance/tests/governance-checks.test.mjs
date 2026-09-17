@@ -70,7 +70,7 @@ const validManifest = {
       archive: "PLAN.zip",
       sha256: "3".repeat(64),
       status: "Approved",
-      version: "1.1",
+      version: "1.2",
       documents: [{ path: "PLAN.md", sha256: "4".repeat(64) }]
     }
   ]
@@ -125,8 +125,8 @@ test("accepts only the active version for each approved baseline authority", () 
   assert.deepEqual(validateBaselineManifest(validManifest), []);
 
   const stalePlan = structuredClone(validManifest);
-  stalePlan.baselines[4].version = "1.0";
-  assert.ok(validateBaselineManifest(stalePlan).some((error) => error.includes("1.1")));
+  stalePlan.baselines[4].version = "1.1";
+  assert.ok(validateBaselineManifest(stalePlan).some((error) => error.includes("1.2")));
 
   const changedUpstream = structuredClone(validManifest);
   changedUpstream.baselines[0].version = "1.1";

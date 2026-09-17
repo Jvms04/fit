@@ -2,7 +2,7 @@
 
 ## Autoridade e escopo
 
-Este repositório segue, nesta ordem, Produto → Arquitetura → Arquitetura Técnica → Stack → Plano de Implementação → artefatos operacionais da Fase 7. Produto, Arquitetura, Arquitetura Técnica e Stack permanecem nas versões 1.0; a Approved Implementation Plan Baseline 1.1 é a autoridade ativa da Fase 6. As cinco baselines aprovadas são somente leitura; o manifesto registra seus hashes, mas não as incorpora nem as substitui.
+Este repositório segue, nesta ordem, Produto → Arquitetura → Arquitetura Técnica → Stack → Plano de Implementação → artefatos operacionais da Fase 7. Produto, Arquitetura, Arquitetura Técnica e Stack permanecem nas versões 1.0; a Approved Implementation Plan Baseline 1.2 é a autoridade ativa da Fase 6. As cinco baselines aprovadas são somente leitura; o manifesto registra seus hashes, mas não as incorpora nem as substitui.
 
 WP-001 cria apenas governança, ownership, documentação, templates e checks estáticos. Domínio, UI, dados, migrations, backend, mobile, cloud e funcionalidade de Produto permanecem proibidos neste WP.
 

@@ -104,24 +104,24 @@
     },
     {
       "authority": "implementationPlan",
-      "archive": "FIT_PHASE6_IMPLEMENTATION_PLAN_BASELINE_1.1.zip",
-      "sha256": "24bd9cb3a88dd05c2469ecd93f958145a29563f3f8093cf96aba451fb93531e2",
+      "archive": "FIT_PHASE6_IMPLEMENTATION_PLAN_BASELINE_1.2.zip",
+      "sha256": "ac78472e56cac30a3d1671b63253e0b225396e861d081412185d74ed0edaddd2",
       "status": "Approved",
-      "version": "1.1",
-      "date": "2026-09-09",
+      "version": "1.2",
+      "date": "2026-09-15",
       "documentCount": 10,
-      "expectedCounts": {"requirements": 106, "P0": 56, "P1": 36, "P2": 12, "P3": 2, "flows": 23, "acceptanceGroups": 14, "AD-BL": 38, "VAL": 25, "SP": 7, "increments": 16, "WP": 44, "IPD": 24},
+      "expectedCounts": {"requirements": 106, "P0": 56, "P1": 36, "P2": 12, "P3": 2, "flows": 23, "acceptanceGroups": 14, "AD-BL": 38, "VAL": 25, "SP": 7, "increments": 16, "WP": 44, "IPD": 30},
       "documents": [
-        {"path": "DATA_AND_MIGRATION_IMPLEMENTATION_PLAN.md", "sha256": "2be7f4ca06ebdee8f0523502f34f87bc7a25847fc0f5ca064f3fbb55cf82657e"},
-        {"path": "DEPENDENCY_RISK_AND_CRITICAL_PATH.md", "sha256": "0c1e1463e26d33e34a9663d614d63d5b3ca569cabc83fa3d403553ec8fbf9db6"},
-        {"path": "ENVIRONMENT_DELIVERY_AND_OPERATIONS_PLAN.md", "sha256": "2a15c31a7d0f30a3da349f1010ed7d37e4393adbfcd75a31213d023d7ee33620"},
-        {"path": "IMPLEMENTATION_PLAN_OVERVIEW.md", "sha256": "5d431704d9f221926b146ceda7c29cacd4a3b918bd3e1a69d6eea972773d09f9"},
-        {"path": "IMPLEMENTATION_ROADMAP.md", "sha256": "46c7bf1298270efc46da68ed20abf0658ca4225b0d10e9f2a5c11ea9c1027547"},
-        {"path": "IMPLEMENTATION_WORK_BREAKDOWN.md", "sha256": "4813b5c9531303520d2e1ef4d646be521d1be2df5c964b847a0edc11aca2dbd1"},
-        {"path": "PHASE6_DECISION_REGISTER.md", "sha256": "64bd309beb38df80314646a51c52b4131d2764a61e69f5e416053a1d511da510"},
-        {"path": "PHASE7_EXECUTION_BRIEF.md", "sha256": "b24badc0cff7ef6c689f07b6aa56a0f09941aea9d89061f693f204b497bd1215"},
-        {"path": "QUALITY_AND_TEST_EXECUTION_PLAN.md", "sha256": "39dbd8acfcb8107f773fb7daed580e193f1fd35c8cd8d44726a3759146ed40ae"},
-        {"path": "VALIDATION_AND_SPIKE_EXECUTION_PLAN.md", "sha256": "21edadd73e46c6dcb763fa77302cdae6879029a79ac4e430de94dfec740b028b"}
+        {"path": "DATA_AND_MIGRATION_IMPLEMENTATION_PLAN.md", "sha256": "cb1da8f660b5367b58fac3f461b468c69b23876321c3336f299ef6bf9111bac7"},
+        {"path": "DEPENDENCY_RISK_AND_CRITICAL_PATH.md", "sha256": "4e3bebc749c1fdc06419b0c4e742f1977ff73b6179a7bb4bad45c5fb1a7f8ad8"},
+        {"path": "ENVIRONMENT_DELIVERY_AND_OPERATIONS_PLAN.md", "sha256": "f4d19198e8e4abb6def00dc585cd80fe7918d6a9b5ea93369cf0bf551c5531d6"},
+        {"path": "IMPLEMENTATION_PLAN_OVERVIEW.md", "sha256": "0bd6c545cc3c7dc07e41d753afafb00147be9d862abc714169950f05a320311e"},
+        {"path": "IMPLEMENTATION_ROADMAP.md", "sha256": "c7800ca2fdc7905bf525327f8ca23267997ef0107c3cd766e41d80b2f343e38a"},
+        {"path": "IMPLEMENTATION_WORK_BREAKDOWN.md", "sha256": "5ff4a177b226e4fb7d7ac032b3fb3a5d40a381f67518f9b65fb76cff87e7d07f"},
+        {"path": "PHASE6_DECISION_REGISTER.md", "sha256": "68ae98ac928f7ab53674113f270ee26fe3eeaa079bb19a083b873880b01f2062"},
+        {"path": "PHASE7_EXECUTION_BRIEF.md", "sha256": "260f82478c6c50966c66f9a9925a4bf8eb85784d7d7c395f2bf6eca7557ad493"},
+        {"path": "QUALITY_AND_TEST_EXECUTION_PLAN.md", "sha256": "a9fa2d898e26e28a2ba2c83fb031a93f53acdbaf919389a4d61743350cca24e4"},
+        {"path": "VALIDATION_AND_SPIKE_EXECUTION_PLAN.md", "sha256": "660af03771fd33d2f1c7f8fa56e6729a9fb0c3bd5aee846cc8b891ad22a8de49"}
       ]
     }
   ]
