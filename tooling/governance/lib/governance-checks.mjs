@@ -11,7 +11,7 @@ const REQUIRED_BASELINE_VERSIONS = {
   architecture: "1.0",
   technicalArchitecture: "1.0",
   stack: "1.0",
-  implementationPlan: "1.1"
+  implementationPlan: "1.2"
 };
 
 function normalizePath(path) {

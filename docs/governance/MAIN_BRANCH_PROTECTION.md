@@ -1,6 +1,6 @@
 # Governança de `main` — modo compensatório ativo
 
-Autoridade: `IPD-014` e §7/§7.1 de `ENVIRONMENT_DELIVERY_AND_OPERATIONS_PLAN.md` da Approved Implementation Plan Baseline 1.1.
+Autoridade: `IPD-014` e §7/§7.1 de `ENVIRONMENT_DELIVERY_AND_OPERATIONS_PLAN.md` da Approved Implementation Plan Baseline 1.2.
 
 ## Evidência de elegibilidade — 2026-09-09
 
